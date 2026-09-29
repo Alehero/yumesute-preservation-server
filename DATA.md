@@ -44,21 +44,35 @@ Upstream's pinned repository includes its own starter-account data, typed master
 uv run --locked python download_data.py --output data
 ```
 
-This uses the original HTTPS host `assets-e.wds-stellarium.com`, without account credentials or a signed URL. The pinned raw master and compressed catalogs have known SHA256 checksums. Media downloads check response length and Content-MD5 when supplied, then retain local SHA256 receipts. Existing files without receipts are downloaded again. Files are saved atomically; reruns verify completed files and retry failures. Redirects are not followed. `--workers 1` reduces concurrency (default 4, maximum 8).
+This uses the original HTTPS host `assets-e.wds-stellarium.com`, without account credentials or a signed URL. The pinned raw master and compressed catalogs have known SHA256 checksums. Media downloads check response length and Content-MD5 when supplied, then retain local SHA256 receipts. Gzip/Brotli/deflate transfer encoding is decoded; response length and Content-MD5 apply to transferred bytes, while pinned SHA256 applies to decoded files. Existing files without receipts are downloaded again. Files are saved atomically; reruns verify completed files and retry failures. Redirects are not followed. `--workers 1` reduces concurrency (default 4, maximum 8).
 
-公式のHTTPS配信元から、アカウント情報や署名付きURLを使わず取得します。固定版マスター・圧縮カタログは既知のSHA256で検証します。素材はサイズと、応答にあればContent-MD5を検証し、SHA256を保存します。検証記録のない既存ファイルは再取得します。中断したファイルを完成扱いにせず、再実行時に完了済みファイルを確認して失敗分を再取得します。リダイレクトには従いません。並列数は既定4、`--workers 1` で減らせます（最大8）。
+公式のHTTPS配信元から、アカウント情報や署名付きURLを使わず取得します。固定版マスター・圧縮カタログは既知のSHA256で検証します。素材は転送時のサイズと、応答にあればContent-MD5を検証し、展開後のSHA256を保存します。HTTPのgzip等による圧縮にも対応しています。検証記録のない既存ファイルは再取得します。中断したファイルを完成扱いにせず、再実行時に完了済みファイルを確認して失敗分を再取得します。リダイレクトには従いません。並列数は既定4、`--workers 1` で減らせます（最大8）。
 
-`--metadata-only` downloads only the master/catalogs and writes `download-plan.json`. `--limit 3` is a small download test, **not a usable complete install**. Neither option proves full coverage. The current plan has 34,057 iOS bundles, 2,012 chart/config paths and 264 comic images. Some paths may be unavailable. A full post-EOS download has not been tested; representative master/catalog/audio/chart/model/comic downloads have succeeded. This is iOS only; no Android catalog is downloaded.
+`--metadata-only` downloads only the master/catalogs and writes `download-plan.json`. `--limit 3` is a small download test, **not a usable complete install**. Neither option proves full coverage. The current plan has 34,057 iOS bundles, 2,012 chart/config paths, 264 comic images and 30 supplemental scene scripts. Some paths may be unavailable. A full post-EOS download has not been tested; representative master/catalog/audio/chart/model/comic downloads have succeeded. This is iOS only; no Android catalog is downloaded.
 
-`--metadata-only` はマスター・カタログと取得予定一覧のみ、`--limit 3` は素材3件のテストです。**どちらも一式の取得ではありません。** 現在の一覧はiOSアセット34,057件、譜面・設定2,012件、コミック264件です。取得できないパスもあります。サービス終了後の全件取得は未検証で、代表的なマスター・カタログ・音声・譜面・3D素材・コミックの取得を確認しています。Android用カタログは対象外です。
+`--metadata-only` はマスター・カタログと取得予定一覧のみ、`--limit 3` は素材3件のテストです。**どちらも一式の取得ではありません。** 現在の一覧はiOSアセット34,057件、譜面・設定2,012件、コミック264件、補完シナリオ30件です。取得できないパスもあります。サービス終了後の全件取得は未検証で、代表的なマスター・カタログ・音声・譜面・3D素材・コミックの取得を確認しています。Android用カタログは対象外です。
 
-The output matches the folder layout above. `prepare --data-dir data` copies it into the release. Budget for both copies (~45 GB free is a starting estimate). This does not download every static banner, story script, login/event response, or the app executable. An account export still provides only account state. Availability on the official CDN does not establish redistribution permission; this repository contains downloader code and identifiers, not those media files.
+The output matches the folder layout above. `prepare --data-dir data` copies it into the release. Budget for both copies (~45 GB free is a starting estimate). This does not guarantee every static banner, story script, login/event response, or the app executable. The 30 identified main/card script gaps are now fetched and verified; see STORY_COVERAGE.md. An account export still provides only account state. Availability on the official CDN does not establish redistribution permission; this repository contains downloader code and identifiers, not those media files.
 
-出力先は上記の構成になり、`prepare --data-dir data` で配布環境にコピーします。両方を保存する容量（空き約45 GBが目安）が必要です。全バナー・シナリオ・ログイン／イベント応答・アプリ本体は取得しません。アカウントZIPもアカウントの状態のみです。公式CDNで取得できることは再配布の許可を意味しません。本リポジトリに含めるのは取得用コードと識別情報で、素材そのものではありません。
+出力先は上記の構成になり、`prepare --data-dir data` で配布環境にコピーします。両方を保存する容量（空き約45 GBが目安）が必要です。全バナー・シナリオ・ログイン／イベント応答・アプリ本体の取得を保証するものではありません。確認したメイン・カードシナリオの不足30件は取得・検証対象です。STORY_COVERAGE.mdをご覧ください。アカウントZIPもアカウントの状態のみです。公式CDNで取得できることは再配布の許可を意味しません。本リポジトリに含めるのは取得用コードと識別情報で、素材そのものではありません。
 
 For an already configured account, do not rerun `prepare`. Stop the local server, rerun the downloader, and copy recovered `data/assets/` files into `vendor/server-of-dreams/_data/assets/`, and `data/static-assets/` into `private/static-assets/`, preserving relative paths. Keep the existing account/configuration files. Restart afterward. Do not clear your device cache as a test.
 
 アカウント設定後は `prepare` を再実行しないでください。ローカルサーバーを停止し、取得ツールを再実行して、取得できた `data/assets/` 内のファイルを `vendor/server-of-dreams/_data/assets/` へ、`data/static-assets/` 内を `private/static-assets/` へ、相対パスを保ってコピーします。アカウント・設定ファイルはそのままにし、その後再起動してください。テストのために端末のキャッシュを削除しないでください。
+
+### Supplemental stories / 不足シナリオの補完
+
+```sh
+uv run --locked python download_data.py --stories-only --output data
+```
+
+This fetches the pinned master and **only the 30 known missing scene scripts**; it is not a download of every story asset. The default full download includes these too. Each scene must match the preserved SHA256 before its metadata is written to `data/episode-manifest.json`. Scripts remain downloaded directly from the official CDN. The repository contains only their IDs, metadata, paths and hashes in `story-supplement.json`.
+
+固定版マスターと、**判明している不足シナリオ30件のみ**を取得します。全ストーリー素材の取得コマンドではありません。通常の一括取得にもこの30件は含まれます。各シナリオのSHA256を確認してから `data/episode-manifest.json` に対応情報を追加します。シナリオ本体は公式CDNから直接取得し、リポジトリの `story-supplement.json` にはID・メタデータ・パス・ハッシュだけを収録しています。
+
+New installations: use `prepare --data-dir data` as usual. Existing installations: stop the server; copy `data/scenes/` to `private/upstream/scenes/`, then merge the episode-ID entries from `data/episode-manifest.json` into `private/upstream/episode-manifest.json` (create it if absent). Preserve any other existing entries. Do not replace account/configuration files or rerun prepare on an initialized account. Restart the server afterward.
+
+新規導入は通常どおり `prepare --data-dir data` を使います。導入済みの場合はサーバーを止め、`data/scenes/` を `private/upstream/scenes/` にコピーし、`data/episode-manifest.json` のエピソードIDごとの項目を `private/upstream/episode-manifest.json` に追加します（なければ作成）。他の既存項目は残してください。アカウント・設定ファイルを置き換えず、設定済みアカウントにprepareを再実行しないでください。その後サーバーを再起動します。
 
 ## Existing PostgreSQL / 既存のPostgreSQLを利用する場合
 

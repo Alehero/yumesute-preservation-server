@@ -5,12 +5,14 @@ import hashlib
 import json
 import re
 import time
+import zlib
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from urllib.parse import urlsplit
 
 import brotli
 import requests
+from urllib3.exceptions import HTTPError as TransportError
 
 BASE = 'https://assets-e.wds-stellarium.com'
 VERSION = '1.96.0'
@@ -60,12 +62,24 @@ def fetch(url, dest, expected=None):
                     return {'status': f'HTTP {response.status_code}'}
                 if 'text/' in response.headers.get('Content-Type', ''):
                     raise ValueError('Unexpected text response')
-                sha, md5, size = hashlib.sha256(), hashlib.md5(), 0
+                encoding = response.headers.get('Content-Encoding', '').lower()
+                if encoding not in ('', 'identity', 'gzip', 'deflate', 'br'):
+                    raise ValueError('Unsupported content encoding')
+                decoder = (brotli.Decompressor() if encoding == 'br' else
+                           zlib.decompressobj(16 + zlib.MAX_WBITS if encoding == 'gzip' else zlib.MAX_WBITS)
+                           if encoding in ('gzip', 'deflate') else None)
+                sha, md5, size, wire_size = hashlib.sha256(), hashlib.md5(), 0, 0
                 with temp.open('wb') as out:
-                    for chunk in response.iter_content(1024 * 1024):
-                        out.write(chunk); sha.update(chunk); md5.update(chunk); size += len(chunk)
+                    for chunk in response.raw.stream(1024 * 1024, decode_content=False):
+                        md5.update(chunk); wire_size += len(chunk)
+                        decoded = (decoder.process(chunk) if encoding == 'br' else decoder.decompress(chunk)) if decoder else chunk
+                        out.write(decoded); sha.update(decoded); size += len(decoded)
+                    if decoder and encoding != 'br':
+                        tail = decoder.flush(); out.write(tail); sha.update(tail); size += len(tail)
+                    if decoder and not (decoder.is_finished() if encoding == 'br' else decoder.eof):
+                        raise ValueError('Incomplete compressed download')
                 length = response.headers.get('Content-Length')
-                if not size or (length and size != int(length)):
+                if not size or (length and wire_size != int(length)):
                     raise ValueError('Incomplete download')
                 if response.headers.get('Content-MD5') and base64.b64encode(md5.digest()).decode() != response.headers['Content-MD5']:
                     raise ValueError('Content-MD5 mismatch')
@@ -74,7 +88,7 @@ def fetch(url, dest, expected=None):
                 temp.replace(dest)
                 receipt.write_text(sha.hexdigest())
                 return {'status': 'downloaded', 'bytes': size, 'sha256': sha.hexdigest()}
-        except (requests.RequestException, ValueError) as exc:
+        except (requests.RequestException, TransportError, ValueError, zlib.error, brotli.error) as exc:
             if attempt == 2:
                 return {'status': 'failed', 'error': str(exc)}
             time.sleep(2 ** attempt)
@@ -128,7 +142,37 @@ def metadata_jobs(raw):
     return jobs
 
 
-def run(output, workers=4, limit=0, metadata_only=False):
+def story_supplement():
+    source = Path(__file__).resolve().parent / 'story-supplement.json'
+    entries = json.loads(source.read_text(encoding='utf-8'))['episodes']
+    for eid, entry in entries.items():
+        if not eid.isdigit():
+            raise ValueError('Invalid episode ID')
+        name = entry['metadata']['episode_detail_asset_source']
+        if not re.fullmatch(r'scenes/' + re.escape(eid) + r'_[a-f0-9]+\.bin', name):
+            raise ValueError('Invalid story scene identifier')
+        if not re.fullmatch(r'[a-f0-9]{64}', entry['sha256']):
+            raise ValueError('Invalid story checksum')
+        if entry['metadata']['story_type'] not in (1, 3):
+            raise ValueError('Unexpected supplemental story type')
+    return entries
+
+
+def save_story_manifest(output, entries):
+    # Publish metadata only for verified scene files. Keep unrelated local entries.
+    path = output / 'episode-manifest.json'
+    manifest = json.loads(path.read_text(encoding='utf-8')) if path.exists() else {}
+    for eid, entry in entries.items():
+        scene = output / entry['metadata']['episode_detail_asset_source']
+        if scene.is_file() and digest(scene) == entry['sha256']:
+            manifest[eid] = entry['metadata']
+    if manifest:
+        temp = path.with_suffix('.tmp')
+        temp.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding='utf-8')
+        temp.replace(path)
+
+
+def run(output, workers=4, limit=0, metadata_only=False, stories_only=False):
     from server import bootstrap
     bootstrap()
     output = Path(output).expanduser().resolve()
@@ -140,7 +184,7 @@ def run(output, workers=4, limit=0, metadata_only=False):
     required(BASE + '/master-data/production/' + MANIFEST['uri'], 'master-original.db', MASTER_HASH)
     (output / 'master-manifest.json').write_text(json.dumps(MANIFEST, indent=2))
     jobs = []
-    for kind, checksum in CATALOG_HASHES.items():
+    for kind, checksum in ([] if stories_only else CATALOG_HASHES.items()):
         rel = f'catalogs/{kind}.json.br'
         required(f'{BASE}/production/{kind}/iOS/{VERSION}/catalog_{VERSION}.json.br', rel, checksum)
         catalog = json.loads(brotli.decompress((output / rel).read_bytes()))
@@ -149,7 +193,14 @@ def run(output, workers=4, limit=0, metadata_only=False):
         dest.write_text(json.dumps(catalog))
         jobs.extend((f'assets/{kind}/ios/{p}', f'{BASE}/production/{kind}/iOS/{VERSION}/{p}')
                     for p in bundle_paths(catalog, kind))
-    jobs.extend(metadata_jobs((output / 'master-original.db').read_bytes()))
+    if not stories_only:
+        jobs.extend(metadata_jobs((output / 'master-original.db').read_bytes()))
+    stories = story_supplement()
+    expected = {}
+    for entry in stories.values():
+        path = entry['metadata']['episode_detail_asset_source']
+        expected[path] = entry['sha256']
+        jobs.append((path, BASE + '/master-data/production/' + path))
     print(f'Enumerated {len(jobs)} media files for iOS {VERSION}.', flush=True)
     (output / 'download-plan.json').write_text(json.dumps(jobs))
     if metadata_only:
@@ -159,13 +210,14 @@ def run(output, workers=4, limit=0, metadata_only=False):
     report = output / 'download-report.jsonl'
     def work(job):
         path, url = job
-        return {'path': path, **fetch(url, output / path)}
+        return {'path': path, **fetch(url, output / path, expected.get(path))}
     with report.open('w') as log, ThreadPoolExecutor(max_workers=workers) as pool:
         for n, result in enumerate(pool.map(work, selected), 1):
             errors += result['status'] not in ('downloaded', 'verified-existing')
             log.write(json.dumps(result) + '\n'); log.flush()
             if n % 100 == 0 or n == len(selected):
                 print(f'{n}/{len(selected)} processed; missing/failed={errors}', flush=True)
+    save_story_manifest(output, stories)
     print(f'Report: {report}. Rerun to retry missing files; verified files are skipped.')
     if limit: print('LIMITED TEST: this is not a complete media download.')
     return 2 if errors else 0
@@ -176,10 +228,11 @@ def main():
     p.add_argument('--output', default='data')
     p.add_argument('--workers', type=int, choices=range(1, 9), default=4)
     p.add_argument('--limit', type=int, default=0, help='Download only N media files (test only)')
+    p.add_argument('--stories-only', action='store_true', help='Fetch only master and the 30 supplemental story scripts')
     p.add_argument('--metadata-only', action='store_true', help='Fetch master/catalogs and enumerate media')
     args = p.parse_args()
     if args.limit < 0: p.error('--limit must be nonnegative')
-    raise SystemExit(run(args.output, args.workers, args.limit, args.metadata_only))
+    raise SystemExit(run(args.output, args.workers, args.limit, args.metadata_only, args.stories_only))
 
 if __name__ == '__main__':
     main()

@@ -1,0 +1,276 @@
+{
+  "description": "30 scene-script gaps in the pinned upstream archive; identifiers, metadata and checksums only. No script text, media or credentials.",
+  "source": "https://github.com/wds-sirius/Adv-Resource",
+  "episodes": {
+    "141491": {
+      "metadata": {
+        "episode_title": "揺れる心の軸線",
+        "story_type": 3,
+        "episode_order": 1,
+        "episode_detail_asset_source": "scenes/141491_f115fcbfd5613726fffb1529.bin"
+      },
+      "sha256": "98e8d8286c3eeb572711e1d6f0b11e11a7144b7432170b41f81a29ae3e2833b3"
+    },
+    "141492": {
+      "metadata": {
+        "episode_title": "自分なりの自由を",
+        "story_type": 3,
+        "episode_order": 2,
+        "episode_detail_asset_source": "scenes/141492_8a57369fc6c29649007672f9.bin"
+      },
+      "sha256": "46898766da4f4ef2c2bc57c7cf0114d402c9b3f901da6ad1968fc3f139b047d4"
+    },
+    "141501": {
+      "metadata": {
+        "episode_title": "本気でやってないから",
+        "story_type": 3,
+        "episode_order": 1,
+        "episode_detail_asset_source": "scenes/141501_812fb73d7f595ed74c31bb38.bin"
+      },
+      "sha256": "b788f2b5bba2a2225e6220b4fcb88af509994da163f64a9518320543e40e8344"
+    },
+    "141502": {
+      "metadata": {
+        "episode_title": "勝利の秘訣",
+        "story_type": 3,
+        "episode_order": 2,
+        "episode_detail_asset_source": "scenes/141502_86ae0b6e381b672139207d05.bin"
+      },
+      "sha256": "5458c96029bfa8920728236d745f448c5f8823361e2fd35f6d1f7855922d52fe"
+    },
+    "142511": {
+      "metadata": {
+        "episode_title": "焦がれていた時間を前に",
+        "story_type": 3,
+        "episode_order": 1,
+        "episode_detail_asset_source": "scenes/142511_123a3c4b1150b2f1148d8628.bin"
+      },
+      "sha256": "97e986247c7f8cad4cdca5f1ec08b86916ef54acfbd345c916016c41d7049426"
+    },
+    "142512": {
+      "metadata": {
+        "episode_title": "憧れの人の隣で",
+        "story_type": 3,
+        "episode_order": 2,
+        "episode_detail_asset_source": "scenes/142512_8d937a8e82b74737215c53c2.bin"
+      },
+      "sha256": "9ed6ab620116121b6d2484617ac2bf1cb1806217d62dc465d6e8ba60f9e0354b"
+    },
+    "142521": {
+      "metadata": {
+        "episode_title": "銀河に起きた僅かな変化",
+        "story_type": 3,
+        "episode_order": 1,
+        "episode_detail_asset_source": "scenes/142521_eb6f5d013af93c0c0ea16026.bin"
+      },
+      "sha256": "2e96c4c306b4195c33121bb108df87eb07a413df8df6bbb0014333830b288559"
+    },
+    "142522": {
+      "metadata": {
+        "episode_title": "守りたい者を想う二人",
+        "story_type": 3,
+        "episode_order": 2,
+        "episode_detail_asset_source": "scenes/142522_a546277575aa07a39c3aa65d.bin"
+      },
+      "sha256": "8bacb91249e53149c25e55fe25dc1eae9e1c76ad04493103ecc0899341b2efc6"
+    },
+    "150051": {
+      "metadata": {
+        "episode_title": "敗北と別離",
+        "story_type": 3,
+        "episode_order": 1,
+        "episode_detail_asset_source": "scenes/150051_c4a473802a908d8af1c5d9e4.bin"
+      },
+      "sha256": "e0e1ce28cc56ea487606562625760a22d7b7960de59f1f0a9e8f1542c848bbb7"
+    },
+    "150052": {
+      "metadata": {
+        "episode_title": "顕現せし時",
+        "story_type": 3,
+        "episode_order": 2,
+        "episode_detail_asset_source": "scenes/150052_dc7a479b602027bcdfd5238a.bin"
+      },
+      "sha256": "f9a1ce550d099f8a6896d80de16663c9dc163a407f8a2eabf3b197625edeef67"
+    },
+    "1050101": {
+      "metadata": {
+        "episode_title": "星々が集まって　前編",
+        "story_type": 1,
+        "episode_order": 1,
+        "episode_detail_asset_source": "scenes/1050101_598b42ed3e3928d2c6db5bd5.bin"
+      },
+      "sha256": "8d3059574d82c06d26d5d36fd6f2fc6fb60dac2171df2e5efe6a3d7d915667de"
+    },
+    "1050102": {
+      "metadata": {
+        "episode_title": "星々が集まって　後編",
+        "story_type": 1,
+        "episode_order": 2,
+        "episode_detail_asset_source": "scenes/1050102_b35dfc742f9ba6c2880d28de.bin"
+      },
+      "sha256": "fdce71995ebdc939b0bba1a9ee1121bc8c3c9bbf4fb201b12688bf16529241aa"
+    },
+    "1050103": {
+      "metadata": {
+        "episode_title": "ダイスターたち",
+        "story_type": 1,
+        "episode_order": 3,
+        "episode_detail_asset_source": "scenes/1050103_6132622012a114adeb89816e.bin"
+      },
+      "sha256": "fda69471a5742bc2bdc3e2282e2876ec52cf92540a3d1c93ca0c4b8e1964a4ef"
+    },
+    "1050104": {
+      "metadata": {
+        "episode_title": "選ばれし星の中の輝き",
+        "story_type": 1,
+        "episode_order": 4,
+        "episode_detail_asset_source": "scenes/1050104_96c0362b02f363da138db319.bin"
+      },
+      "sha256": "bab2444611447bf6ef385ca65926e0e22852ed0f7d4e82062ae0c661d11a8763"
+    },
+    "1050105": {
+      "metadata": {
+        "episode_title": "原石の星に光を見出す",
+        "story_type": 1,
+        "episode_order": 5,
+        "episode_detail_asset_source": "scenes/1050105_1b2fec5dbcc6291cfc972b3e.bin"
+      },
+      "sha256": "9ac4d081daa8b3aff21562f14c8d80252a45dc1121e286f0c3aa1e771306b8ba"
+    },
+    "1050106": {
+      "metadata": {
+        "episode_title": "銀河座・電姫の最終稽古",
+        "story_type": 1,
+        "episode_order": 6,
+        "episode_detail_asset_source": "scenes/1050106_5e247ccb58e45dccbe03891b.bin"
+      },
+      "sha256": "7c509f045817f99899af69e3f1e734a16ab7758883532ed430b9ad1a75093138"
+    },
+    "1050107": {
+      "metadata": {
+        "episode_title": "Eden・シリウスの最終稽古",
+        "story_type": 1,
+        "episode_order": 7,
+        "episode_detail_asset_source": "scenes/1050107_0abefe088739be6134f9da58.bin"
+      },
+      "sha256": "b43c791bf11911ff932e38dccf66961e7bde245441b86111e8970501cd8f72a9"
+    },
+    "1050108": {
+      "metadata": {
+        "episode_title": "悪戯な神々",
+        "story_type": 1,
+        "episode_order": 8,
+        "episode_detail_asset_source": "scenes/1050108_e905cb166ae643871b5e1376.bin"
+      },
+      "sha256": "2fe7e58a553f6ef8d3941b55b12fa922c179467a6539f4086807a23703361d70"
+    },
+    "1050109": {
+      "metadata": {
+        "episode_title": "感化　前編",
+        "story_type": 1,
+        "episode_order": 9,
+        "episode_detail_asset_source": "scenes/1050109_8adbb7b50edea0dbc67a7534.bin"
+      },
+      "sha256": "8ef9d66a0eb4efdbb48e224c1c7ca09a7e4ffcc5f48ba10a48e7f7c0f8397314"
+    },
+    "1050110": {
+      "metadata": {
+        "episode_title": "感化　後編",
+        "story_type": 1,
+        "episode_order": 10,
+        "episode_detail_asset_source": "scenes/1050110_58dd5eaa78b415aea2f2d59b.bin"
+      },
+      "sha256": "12e37e7e47dd9ddceff2037d2c04ca6fe7a4a327418bec510aa9dd856b1908b2"
+    },
+    "1050111": {
+      "metadata": {
+        "episode_title": "戦友たち",
+        "story_type": 1,
+        "episode_order": 11,
+        "episode_detail_asset_source": "scenes/1050111_5ddd33bf32c6af4f0fbfdaf9.bin"
+      },
+      "sha256": "13cf648f313b973b345250900bff34da8b6684b3c5d704b6774f2062d5373edd"
+    },
+    "1050112": {
+      "metadata": {
+        "episode_title": "麗しき女神の為のセプテット",
+        "story_type": 1,
+        "episode_order": 12,
+        "episode_detail_asset_source": "scenes/1050112_1617cec3e4923359015da67c.bin"
+      },
+      "sha256": "25a07f2a1675f811318a70bef1861e3277ed617efe2c2b7fa67a7436da88d463"
+    },
+    "1050113": {
+      "metadata": {
+        "episode_title": "革命",
+        "story_type": 1,
+        "episode_order": 13,
+        "episode_detail_asset_source": "scenes/1050113_1d48ec1544efcf5d4d51d6b6.bin"
+      },
+      "sha256": "3b8d403ae7ce3b3358ccb1c14132df9b27a1395e94c4f0835465f67c9fdffec9"
+    },
+    "1050114": {
+      "metadata": {
+        "episode_title": "忘れられた神の慟哭と飢え",
+        "story_type": 1,
+        "episode_order": 14,
+        "episode_detail_asset_source": "scenes/1050114_c7866168c14dff7d4ca1597d.bin"
+      },
+      "sha256": "ae73c962452b3d11a79feb220d7804e2e5b73ad72a2586ce031576c0afcc1d86"
+    },
+    "1050115": {
+      "metadata": {
+        "episode_title": "願い",
+        "story_type": 1,
+        "episode_order": 15,
+        "episode_detail_asset_source": "scenes/1050115_3c0c25019079efb69fb1e2a0.bin"
+      },
+      "sha256": "34dc9ca776f378d0414276fe22c3c66d9f4abad4df50c209266d3ceddad801d0"
+    },
+    "1050116": {
+      "metadata": {
+        "episode_title": "School war Justice!!",
+        "story_type": 1,
+        "episode_order": 16,
+        "episode_detail_asset_source": "scenes/1050116_9e653936a442df6e9506082d.bin"
+      },
+      "sha256": "f846e5c950c08e778ea5e2d9045fffdc1c6aaefb82423c35c47e41171651c952"
+    },
+    "1050117": {
+      "metadata": {
+        "episode_title": "夢の舞台へ",
+        "story_type": 1,
+        "episode_order": 17,
+        "episode_detail_asset_source": "scenes/1050117_f9bbcd74e3390bee0b1b416d.bin"
+      },
+      "sha256": "2a18b49791a04c645f8de3feacb2df5a4e6e6605a1b13f1384a54ba826455f4d"
+    },
+    "1050118": {
+      "metadata": {
+        "episode_title": "ネクタルの注がれる先",
+        "story_type": 1,
+        "episode_order": 18,
+        "episode_detail_asset_source": "scenes/1050118_ecffc8427ee5985ea9735b12.bin"
+      },
+      "sha256": "2cb3f9e9b4da646ac7b5d40d7e994f750f72b6b227ce6749a9e5cc6a0f93bcd6"
+    },
+    "1050119": {
+      "metadata": {
+        "episode_title": "結果発表",
+        "story_type": 1,
+        "episode_order": 19,
+        "episode_detail_asset_source": "scenes/1050119_e466225e2fa5c84ff673067e.bin"
+      },
+      "sha256": "7dee752dd1f6310621194c1302aa59adf84ddf92bad01289602cf22b99931508"
+    },
+    "1050120": {
+      "metadata": {
+        "episode_title": "そして、これからも",
+        "story_type": 1,
+        "episode_order": 20,
+        "episode_detail_asset_source": "scenes/1050120_8be94ce1dd00848df78af5ff.bin"
+      },
+      "sha256": "df7c5079712fdcb790b17fa50b42db3e377ed85d406b94f6d5d59fe52abeac20"
+    }
+  }
+}

@@ -266,3 +266,18 @@ replays and the separate iPhone v3 experiment are not active in this release.
 - Captured-only features remain unchanged. Gameplay inventory stays at **29 groups**;
   downloader/setup infrastructure is not another gameplay feature. Backend remains
   UnknownSekai/server-of-dreams at 3cfca23267fb0f79d7336732db768e1510f20313.
+
+## Supplemental story downloads — September 29, 2026
+
+- Implemented/tested: default downloader now includes the 30 exact known story-script
+  gaps (20 main, 10 card-side); --stories-only fetches that subset plus master data.
+  SHA256-verified scenes generate server metadata. Added gzip/Brotli/deflate transfer
+  handling with separate wire-length/MD5 and decoded-file SHA256 verification.
+- All 30 official-CDN downloads matched preserved scene bytes. Verified-file rerun
+  and isolated preparation installed all scene paths/metadata. All 21 unit tests pass.
+- Device-confirmed: no new playback result. Story voices/backgrounds remain separate
+  catalog downloads; poster/unindexed story completeness, future CDN availability and
+  fresh-client playback are not guaranteed. Captured-only features remain unchanged.
+- Added bilingual coverage list and instructions. Only identifiers/metadata/hashes are
+  published, no scenes or credentials. Gameplay inventory remains **29 groups** on
+  pinned UnknownSekai/server-of-dreams; this is preservation/setup coverage.
