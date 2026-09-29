@@ -62,17 +62,9 @@ For an already configured account, do not rerun `prepare`. Stop the local server
 
 ### Supplemental stories / 不足シナリオの補完
 
-```sh
-uv run --locked python download_data.py --stories-only --output data
-```
+The normal download includes the 30 identified missing scene scripts. Each must match its preserved SHA256 before its metadata is written to `data/episode-manifest.json`. The usual `prepare --data-dir data` installs both scripts and metadata in their server locations. No separate story command is needed. The repository contains only IDs, metadata, paths and hashes in `story-supplement.json`; scene payloads are downloaded from the official CDN.
 
-This fetches the pinned master and **only the 30 known missing scene scripts**; it is not a download of every story asset. The default full download includes these too. Each scene must match the preserved SHA256 before its metadata is written to `data/episode-manifest.json`. Scripts remain downloaded directly from the official CDN. The repository contains only their IDs, metadata, paths and hashes in `story-supplement.json`.
-
-固定版マスターと、**判明している不足シナリオ30件のみ**を取得します。全ストーリー素材の取得コマンドではありません。通常の一括取得にもこの30件は含まれます。各シナリオのSHA256を確認してから `data/episode-manifest.json` に対応情報を追加します。シナリオ本体は公式CDNから直接取得し、リポジトリの `story-supplement.json` にはID・メタデータ・パス・ハッシュだけを収録しています。
-
-New installations: use `prepare --data-dir data` as usual. Existing installations: stop the server; copy `data/scenes/` to `private/upstream/scenes/`, then merge the episode-ID entries from `data/episode-manifest.json` into `private/upstream/episode-manifest.json` (create it if absent). Preserve any other existing entries. Do not replace account/configuration files or rerun prepare on an initialized account. Restart the server afterward.
-
-新規導入は通常どおり `prepare --data-dir data` を使います。導入済みの場合はサーバーを止め、`data/scenes/` を `private/upstream/scenes/` にコピーし、`data/episode-manifest.json` のエピソードIDごとの項目を `private/upstream/episode-manifest.json` に追加します（なければ作成）。他の既存項目は残してください。アカウント・設定ファイルを置き換えず、設定済みアカウントにprepareを再実行しないでください。その後サーバーを再起動します。
+通常の一括取得に、判明している不足シナリオ30件も含まれます。各ファイルのSHA256を確認してから `data/episode-manifest.json` に対応情報を追加し、通常の `prepare --data-dir data` でシナリオとメタデータを所定の場所に配置します。別のシナリオ用コマンドは不要です。リポジトリの `story-supplement.json` にはID・メタデータ・パス・ハッシュだけを収録し、本体は公式CDNから取得します。
 
 ## Existing PostgreSQL / 既存のPostgreSQLを利用する場合
 

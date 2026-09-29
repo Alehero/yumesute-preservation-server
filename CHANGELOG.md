@@ -270,7 +270,8 @@ replays and the separate iPhone v3 experiment are not active in this release.
 ## Supplemental story downloads — September 29, 2026
 
 - Implemented/tested: default downloader now includes the 30 exact known story-script
-  gaps (20 main, 10 card-side); --stories-only fetches that subset plus master data.
+  gaps (20 main, 10 card-side) through the normal download command. No separate
+  story-only setup option is exposed.
   SHA256-verified scenes generate server metadata. Added gzip/Brotli/deflate transfer
   handling with separate wire-length/MD5 and decoded-file SHA256 verification.
 - All 30 official-CDN downloads matched preserved scene bytes. Verified-file rerun
