@@ -1,0 +1,69 @@
+# Local data and backups / ローカルデータとバックアップ
+
+[日本語ガイド](README.md) · [English guide](README.en.md)
+
+## Game-data folder / ゲームデータの構成
+
+Supply an ordinary local directory, not an account ZIP. `prepare` copies these paths:
+アカウントZIPではなく、次の構成のフォルダーを用意してください。`prepare` はこれらをコピーします。
+
+```text
+game-data/
+  master-original.db       # required / 必須：元のMasterMemoryバイナリー
+  master-manifest.json     # required / 必須：マスターのマニフェスト
+  assets/                 # upstream _data/assets layout / 上流と同じ構成
+    2d-assets/ios/catalog.json
+    2d-assets/ios/...      # bundle paths relative to the catalog
+    3d-assets/ios/catalog.json
+    3d-assets/ios/...
+    cri-assets/ios/catalog.json
+    cri-assets/ios/...
+    Notations/<music-id>/<file>.enc
+  static-assets/
+    production/static-assets/...   # banners, comics, etc. / バナー・コミック等
+  scenes/                 # preserved binary story scripts / 保存済みシナリオ
+  episode-manifest.json   # optional captured metadata / 任意の取得済みメタデータ
+  episodes/               # optional upstream _data/episodes layout
+```
+
+Reference asset version is **1.96.0**. The manifest is the decoded `MasterDataManifest` object with snake_case fields such as `uri`, `version`, `publish_timestamp`, and `sas_token`. Keep the original master binary; typed JSON alone may have lost fields. The server strips the manifest SAS token and points clients at a locally served, date-adjusted copy. It does not change the source archive.
+
+基準のアセット版は **1.96.0** です。マニフェストは `MasterDataManifest` のデコード済みJSON（`uri`、`version`、`publish_timestamp`、`sas_token` 等）です。型付きJSONのみでは欠落する項目があるため、元のマスターバイナリーが必要です。配信時にはSASトークンを除き、対象の終了日時を延長したローカルコピーを参照します。原本は変更しません。
+
+An export from the account tool does **not** contain any of the above. Game data already cached on a device is not automatically accessible through USB or included in an ordinary backup. This repository supplies no download link or full data pack. If master data is unavailable, there is no supported shortcut through setup. Media directories are optional for the preparation command, but missing files will block whichever screens or songs need them; they are not optional for those features to work. Already cached media may suffice for some device actions, but that is not a complete preservation guarantee.
+
+アカウント保存ツールのZIPには上記データは含まれません。端末のキャッシュはUSB接続だけで取得できるとは限らず、通常のバックアップにも必ず含まれるわけではありません。本リポジトリではデータ一式や取得先リンクを配布しません。マスターがない場合はセットアップできません。素材フォルダーは準備コマンド上は省略可能ですが、その素材を必要とする画面・楽曲は動きません。キャッシュ済みの端末で一部動作しても、完全保存の保証にはなりません。
+
+Upstream's pinned repository includes its own starter-account data, typed master tables and episode resources. Bootstrap fetches that repository as published; our preparation replaces typed master tables using your raw master. Our source repository does not embed a copy of those resources. Upstream availability is a first-install dependency. Save your prepared installation locally if you need offline reinstallation.
+
+固定コミットの上流リポジトリには初期アカウントデータ、型付きマスター、エピソードのリソースが含まれています。初回準備では上流を取得し、型付きマスターを自分の原本から生成し直します。本リポジトリ内にこれらのコピーは含めません。初回は上流へのアクセスが必要です。再インストールに備え、準備済み環境も手元で保管してください。
+
+## Existing PostgreSQL / 既存のPostgreSQLを利用する場合
+
+Run `prepare`, then edit **only this release folder's** `vendor/server-of-dreams/config.yml` database section to reference a dedicated empty database you own. PostgreSQL 17 is the reference version. Provide host, port, database, username, password. Do not point this at an existing live game database. Skip Docker commands, then run import or fresh creation. The command creates tables and refuses to overwrite accounts. Keep the generated JWT secret stable: changing it invalidates local login tokens.
+
+`prepare` 後、**今回の配布フォルダー内の** `vendor/server-of-dreams/config.yml` のdatabase項目を編集し、専用の空のDBを指定します。基準はPostgreSQL 17です。既存の稼働中ゲームDBを指定しないでください。Dockerのコマンドを省略し、インポートまたは新規作成へ進みます。テーブルは自動作成され、アカウント上書きは拒否されます。JWT秘密鍵を変更するとローカルログイントークンが無効になるため、保持してください。
+
+## Backup / バックアップ
+
+Stop the game and the server terminal first. Keep PostgreSQL running while making its dump:
+ゲームとサーバーを止め、PostgreSQLを起動した状態で実行します。
+
+```sh
+docker compose exec db pg_dump -U yumesute -d yumesute -Fc -f /tmp/yumesute-save.dump
+docker compose cp db:/tmp/yumesute-save.dump ./yumesute-save.dump
+```
+
+Move the dump into a private backup folder immediately; it contains account data. Also back up `private/`, `.env`, `vendor/server-of-dreams/config.yml`, `preservation-rules.json`, and your local game-data files. The dump alone does not include photos stored on disk, login-association files, signing secrets, or assets. Keep the original exporter ZIP separately. The Docker volume persists across `docker compose stop` and `down`; **`docker compose down -v` deletes that volume**. Do not use it on saves you want to keep.
+
+ダンプにはアカウント情報が入るため、直後に非公開のバックアップ先へ移動してください。`private/`、`.env`、`vendor/server-of-dreams/config.yml`、`preservation-rules.json`、ゲームデータも一緒に保存します。DBダンプだけでは写真ファイル、ログインの対応付け、秘密鍵、素材は保存されません。元のアカウントZIPも別途保管してください。Dockerの `stop` や `down` ではDBボリュームは残りますが、**`docker compose down -v` はボリュームを削除します**。
+
+Restore first into a separate installation/database, using the same source revision and backed-up config/private files. For an empty new Docker database, copy the dump into the container and use `pg_restore -U yumesute -d yumesute --no-owner /tmp/yumesute-save.dump`. Never restore over a working account as an initial test. Run `doctor` before reconnecting a device. The original export contains only the state when it was captured; importing it again is not a backup of later private-server progress.
+
+復元テストは別のインストール・空のDBに対して行い、同じソース版と保存した設定・privateファイルを使います。空のDocker DBにはダンプをコピーし、コンテナー内で `pg_restore -U yumesute -d yumesute --no-owner /tmp/yumesute-save.dump` を実行します。稼働中のアカウントへの上書きで試さないでください。端末を接続する前に `doctor` を実行します。元のZIPは取得時点の状態であり、その後のローカル進行は含みません。
+
+## Verification boundaries / 検証範囲
+
+Release checks use disposable databases: exporter ZIP validation/import, fresh starter creation, wrong-password rejection, linking/authentication, account-data serialization, master serving and missing-asset behavior. Automated success does not certify fresh-client onboarding or every gameplay feature. Docker Compose and Windows are documented paths; this Mac's validation uses an existing local PostgreSQL 17 instance. See CHANGELOG for final results.
+
+配布用の検証では専用の使い捨てDBを使用します。ZIP検証・インポート、新規初期データ作成、誤パスワードの拒否、連携・認証、アカウントデータ、マスター配信、素材不足時の動作を確認します。自動テスト成功は新規端末の導入や全機能の実機動作を保証しません。このMacでは既存のPostgreSQL 17を利用して検証しており、Docker ComposeおよびWindowsの手順自体は未検証です。結果はCHANGELOGに記録します。

@@ -1,0 +1,13 @@
+.venv/
+private/
+logs/
+vendor/
+data/
+.env
+__pycache__/
+*.pyc
+.DS_Store
+
+*.dump
+*.zip
+.ruff_cache/

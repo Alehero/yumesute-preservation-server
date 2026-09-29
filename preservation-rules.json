@@ -1,0 +1,8 @@
+{
+  "unlimited_attempts": false,
+  "course_free_attempts": 2,
+  "waive_missing_course_tickets": true,
+  "lesson_star_points": 250,
+  "lesson_rank_xp": 1500,
+  "rank_xp_per_stamina": 4.5
+}
