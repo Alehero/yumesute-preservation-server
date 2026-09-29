@@ -238,3 +238,12 @@ and account untouched. Device retry pending.
 
 Earlier entries describe development history. Personal comparison databases, captured-pull
 replays and the separate iPhone v3 experiment are not active in this release.
+
+## Documentation clarification — September 29, 2026
+
+- Clarified the English/Japanese 3.0.0 notes: a newly installed client remained at
+  the EOS notice after linking; compatibility is not guaranteed. Removed references
+  that assumed readers knew the private iPhone experiment. Updated status tables
+  and troubleshooting to describe observed results rather than a universal claim.
+- Documentation only; no server behavior or verification status changed. Gameplay
+  inventory remains 29 groups, based on the pinned server-of-dreams backend.

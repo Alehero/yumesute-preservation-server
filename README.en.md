@@ -7,7 +7,7 @@ An unofficial local server for preserved **World Dai Star: Yume no Stellarium** 
 **Read first: this does not restore the official service or provide the game app. An account ZIP alone is not enough.** You need a compatible installed client, master data, and the media needed by that client. This repository does not distribute an IPA/APK, game media, or anyone's account.
 
 - Reference device: existing **iOS 2.31.3 client (build 2.31.3.425)**, M1 iPad Pro, iPadOS 26.6.1, macOS 26.2.
-- **3.0.0 is unsupported.** The iPhone test still stops at the EOS notice after linking. Do not delete or update a working older client.
+- **Compatibility with 3.0.0 is not guaranteed.** In our test of a newly installed 3.0.0 client, the game continued to show the end-of-service notice after account linking and did not reach home. Do not delete or update a working older client.
 - Home, solo play, results surviving restart, and several progression features were device-confirmed in the development setup. This is distinct from device-testing the entire release installer.
 - This is an early **one-account-per-installation, home-LAN** package, not a public multi-user hosting service. Windows instructions are provided but are not device-tested.
 
@@ -86,7 +86,7 @@ Keep the computer awake and terminal open. To stop: **turn WireGuard off, then p
 | Fresh accounts | Creation/API validation supported; actual device onboarding remains unverified |
 | Multiplayer, circles, Theater League | Unsupported/incomplete; captured traffic is not a working implementation |
 | Unlock-all / complete no-limits mode | Not included in this release |
-| Client 3.0.0 / new app installation | Unsupported; a server package does not solve client availability |
+| Client 3.0.0 / new app installation | Compatibility not guaranteed; a newly installed 3.0.0 client did not reach home in our test |
 
 ## Troubleshooting
 
@@ -94,7 +94,7 @@ Keep the computer awake and terminal open. To stop: **turn WireGuard off, then p
 - **Port conflict:** defaults are backend TCP 8125 (loopback), WireGuard UDP 51822, certificate TCP 8766, and PostgreSQL TCP 55433 (loopback). Use `start --port 8126 --wg-port 51823 --cert-port 8767`. Change DB port in both `.env` and `vendor/server-of-dreams/config.yml` before initialization.
 - **Certificate/tunnel failure:** check same LAN, guest-network isolation, computer firewall, and full certificate trust. Allow only the required traffic on your home network. Internet port forwarding is unnecessary.
 - **Missing images/songs or HTTP 404:** check `doctor` and `logs/backend.log`. Missing media must be supplied locally. File counts are not proof of completeness. Do not clear the app cache to troubleshoot this.
-- **EOS after linking:** known 3.0.0 limitation. Repeating the transfer will not fix it.
+- **EOS after linking on 3.0.0:** this also occurred in our test of a newly installed client. Repeating the transfer and restarting did not resolve it; we do not yet have a verified fix.
 - **Database connection failure:** check Docker Desktop and `docker compose ps`. Changing `.env` does not change a password inside an existing database volume. Do not casually delete the volume.
 
 See [DATA.md](DATA.md) for backups, data layout, and existing PostgreSQL. Issues in Japanese or English are welcome. Include OS/client versions, the failing step, and a sanitized error. **Do not upload account ZIPs, private folders, QR codes, or linking credentials.**
