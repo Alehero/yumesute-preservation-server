@@ -1,0 +1,104 @@
+"""Release adapter; personal diagnostics and iPhone v3 experiments are excluded."""
+import hashlib
+import hmac
+import json
+import os
+import sys
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT/'vendor/server-of-dreams'))
+from app import app
+from gameplay import install
+install(app)
+from fastapi import APIRouter, Request
+from fastapi.responses import FileResponse, Response
+from helpers.auth import authenticate as upstream_authenticate, make_session_jwt, make_jwt
+from helpers.msgpack import read_request, respond
+from helpers.user_data import user_data as database_user_data
+from helpers.mastermemory import from_json
+from db.account import get_account_by_id, update_account_token
+from models import AuthenticateResult, MasterDataManifest, TakeOverAccountPayload, TakeOverAccountResult
+from scripts._sirius import _unpack_all, _decompress
+from preservation_dates import preserved_master
+from account_compat import merge_account
+import routes.account
+import routes.data
+ACCOUNT = json.loads((ROOT/'private/account.json').read_text())
+
+def manifest():
+    data=json.loads((ROOT/'private/upstream/master-manifest.json').read_text())
+    _,digest,_=preserved_master()
+    version=f'1790658001_{int(digest[:8],16)}'
+    data.update(uri=f'preservation/mastermemory_{version}.db', version=version,
+                publish_timestamp=1790658001, sas_token='')
+    return MasterDataManifest(**data)
+
+async def authenticate(payload, app):
+    expected=ACCOUNT.get('token_sha256')
+    if expected and payload and hmac.compare_digest(hashlib.sha256((payload.login_token or '').encode()).hexdigest(), expected):
+        async with app.acquire_db() as conn:
+            row=await conn.fetchrow(get_account_by_id(ACCOUNT['user_id']))
+            if row:
+                token=make_session_jwt(ACCOUNT['user_id'],'AppStore')
+                await conn.execute(update_account_token(ACCOUNT['user_id'],token))
+                return AuthenticateResult(token=token,ban_level=row.banLevel)
+    return await upstream_authenticate(payload,app)
+
+async def user_data(app,uid):
+    current=await database_user_data(app,uid)
+    if uid != ACCOUNT['user_id'] or ACCOUNT['mode']!='import': return current
+    raw=(ROOT/'private/account-snapshot/user-data.response.bin').read_bytes()
+    original=[_decompress(x) for x in _unpack_all(raw)][1]
+    baseline=from_json(json.loads((ROOT/'private/imported-user-roundtrip.json').read_text()))
+    return merge_account(original,baseline,current)
+
+routes.account.authenticate=authenticate
+routes.data.user_data=user_data
+routes.data.master_data_manifest=manifest
+router=APIRouter()
+
+@router.post('/api/Account/GetTakeOverAccount')
+async def transfer(request:Request):
+    p=await read_request(request,TakeOverAccountPayload)
+    if not p or not p.password or len(p.password)>16: return respond(TakeOverAccountResult(is_success=False))
+    t=ACCOUNT['transfer']
+    digest=hashlib.scrypt(p.password.encode(),salt=t['salt'].encode(),n=16384,r=8,p=1).hex()
+    if not(hmac.compare_digest(p.linkage_code or '',t['code']) and hmac.compare_digest(digest,t['hash'])):
+        return respond(TakeOverAccountResult(is_success=False))
+    async with app.acquire_db() as conn:
+        row=await conn.conn.fetchrow('SELECT u."hashUserId",u."playerRank",p.name FROM "user" u JOIN user_profile p ON p."userId"=u."userId" WHERE u."userId"=$1',ACCOUNT['user_id'])
+    return respond(TakeOverAccountResult(is_success=True,user_id=row['hashUserId'],name=row['name'],rank=row['playerRank'],login_token=make_jwt(ACCOUNT['user_id'])))
+
+@router.post('/api/Account/Register')
+async def no_accidental_registration(request:Request):
+    # One account per install. New accounts are created explicitly through the CLI.
+    from models import AccountRegistResult
+    return respond(AccountRegistResult(token='',error_type=1))
+
+app.router.routes[0:0]=router.routes
+
+@app.middleware('http')
+async def local_files(request,call_next):
+    path=request.url.path
+    if path.startswith('/master-data/production/scenes/'):
+        root=(ROOT/'private/upstream/scenes').resolve()
+        f=(root/path.rsplit('/',1)[-1]).resolve()
+        if root in f.parents and f.is_file(): return FileResponse(f,media_type='application/octet-stream')
+        from routes.episodes import episodes_scene_bin
+        try: return await episodes_scene_bin(request,path.rsplit('/',1)[-1])
+        except Exception: return Response('Scene not available locally',404)
+    if path.startswith('/master-data/production/') and path.endswith('.db'):
+        return Response(preserved_master()[0],media_type='application/octet-stream')
+    if path.startswith('/production/static-assets/'):
+        root=(ROOT/'private/static-assets').resolve(); f=(root/path.lstrip('/')).resolve()
+        if root in f.parents and f.is_file(): return FileResponse(f,media_type='application/octet-stream')
+        return Response(status_code=404)
+    response=await call_next(request)
+    if path.startswith('/production/') and 300<=response.status_code<400:
+        return Response('Asset not available locally',404)
+    response.headers['X-Yumesute-Backend']='local-preservation'
+    return response
+
+if __name__=='__main__':
+    import uvicorn
+    uvicorn.run(app,host='127.0.0.1',port=int(os.environ.get('YUMESUTE_PORT','8125')))
