@@ -4,5 +4,6 @@
   "waive_missing_course_tickets": true,
   "lesson_star_points": 250,
   "lesson_rank_xp": 1500,
-  "rank_xp_per_stamina": 4.5
+  "rank_xp_per_stamina": 4.5,
+  "fresh_song_tickets": 10000
 }

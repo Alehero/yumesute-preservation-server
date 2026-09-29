@@ -282,3 +282,24 @@ replays and the separate iPhone v3 experiment are not active in this release.
 - Added bilingual coverage list and instructions. Only identifiers/metadata/hashes are
   published, no scenes or credentials. Gameplay inventory remains **29 groups** on
   pinned UnknownSekai/server-of-dreams; this is preservation/setup coverage.
+
+## Organized archive and fresh-account resources — September 29, 2026
+
+- Implemented/tested: fresh creation grants 10,000 歌劇目録 (item 130001) once, inside
+  account initialization. Configurable via fresh_song_tickets (0 disables). This is a
+  generous preservation policy; imported accounts receive no extra grant. Song/story/
+  chart unlock conditions remain. Upstream seed otherwise remains unchanged.
+- 24 unit tests pass. A disposable PostgreSQL account received 10,000 tickets; song
+  purchase consumed 10 and persisted ownership. Story handler/database checks passed:
+  initial read reward, read-all after skip, direct full read, repeat suppression and
+  stored flags; locked side-story rejection and unlocked reward/character progression.
+- Local archival verification: a separate setup-compatible data directory was assembled
+  from preserved files with checksum comparisons, then checked with the downloader.
+  All 34,057 catalog bundles are present. Of 36,363 download-plan paths, 36,333 verified;
+  30 chart/config paths under 10172 and 901–904 returned 404. Additional saved scenes,
+  upstream episodes and static media are included locally. No media/archive is published.
+- Device-confirmed: no new device result. Fresh onboarding, all story categories and
+  chapter-completion reward parity remain unverified. Captured-only features unchanged.
+- Gameplay inventory remains **29 groups** on pinned UnknownSekai/server-of-dreams
+  3cfca23267fb0f79d7336732db768e1510f20313; this updates setup policy and verifies existing
+  story-reward behavior rather than adding a new gameplay group.

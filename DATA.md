@@ -72,6 +72,16 @@ Run `prepare`, then edit **only this release folder's** `vendor/server-of-dreams
 
 `prepare` 後、**今回の配布フォルダー内の** `vendor/server-of-dreams/config.yml` のdatabase項目を編集し、専用の空のDBを指定します。基準はPostgreSQL 17です。既存の稼働中ゲームDBを指定しないでください。Dockerのコマンドを省略し、インポートまたは新規作成へ進みます。テーブルは自動作成され、アカウント上書きは拒否されます。JWT秘密鍵を変更するとローカルログイントークンが無効になるため、保持してください。
 
+## Fresh-account resources and story rewards / 新規リソースとシナリオ報酬
+
+Fresh creation starts with the pinned upstream seed: 21 starter actors, zero directly held coins/jewels, and 36 unclaimed inbox entries. This release adds 10,000 歌劇目録 directly to item inventory once during fresh account creation. Inbox rewards are separate and must be claimed. This is a configurable preservation policy, not a reconstruction of official starting balances. Imports receive no extra allowance. The current song exchange consumes 10 tickets; chart exchange consumes 1, subject to existing unlock conditions.
+
+新規作成は固定版上流の初期データ（アクター21体、直接所持するコイン・ジュエル0、未受取プレゼント36件）を使い、保存用の設定として歌劇目録10,000個を作成時に1回だけ追加します。プレゼントの報酬は別途受取が必要です。公式の初期所持数を再現したものではありません。インポートには追加しません。現在の楽曲交換は10個、譜面交換は1個を消費し、既存の解放条件も適用されます。
+
+Story read rewards are implemented from master reward packages. Backend/database checks confirm first-read rewards, the main-story full-read bonus, reading fully after skipping, and no repeated grants. Locked card side stories are rejected; an unlocked side story grants its read reward once and updates character reading progress. For the tested main episode 1010101, read/skip grants 50 free jewels, 1 歌劇目録 and 30 pieces of item 141001; full reading grants one additional 歌劇目録. These examples are not universal rewards for every story. Chapter-completion reward parity and all story categories are not certified by these checks. No new device playback test was performed.
+
+シナリオの読了報酬はマスターの報酬設定から付与します。バックエンドとDBで、初回報酬、メインストーリーの全文読了ボーナス、スキップ後の全文読了、再読時の重複付与防止を確認しました。未解放のカードサイドストーリーは拒否し、解放済みでは報酬と読了進行を保存します。確認したメイン1010101は読了／スキップで無償ジュエル50、歌劇目録1、アイテム141001を30個、全文読了でさらに歌劇目録1を付与します。全話共通の報酬ではありません。この確認だけで章完了報酬の完全一致や全カテゴリの動作を保証するものではなく、今回の実機再生確認は行っていません。
+
 ## Backup / バックアップ
 
 Stop the game and the server terminal first. Keep PostgreSQL running while making its dump:

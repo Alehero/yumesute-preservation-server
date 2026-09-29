@@ -58,7 +58,7 @@ Use this instead of 2A in an empty installation:
 uv run --locked python server.py fresh-account --name "Player"
 ```
 
-This creates an independent local account using upstream starter data. **It is not an unlock-all preset**, nor a recovery of your official account. Fresh-account tutorial/home onboarding remains device-unverified. A compatible client and game media are still required.
+This creates an independent local account using upstream starter data, plus **10,000 song tickets (歌劇目録, item 130001)** directly in inventory. This generous preservation allowance is configurable with `fresh_song_tickets` in `preservation-rules.json` before account creation (0 disables it). It applies once to fresh accounts only; imported accounts retain their captured resources. Songs still have their normal purchase/story/chart conditions. **It is not an unlock-all preset**, nor a recovery of your official account. Fresh-account tutorial/home onboarding remains device-unverified. A compatible client and game media are still required.
 
 ### 3. Start and connect the device
 
@@ -110,4 +110,4 @@ Backend: [server-of-dreams](https://github.com/UnknownSekai/server-of-dreams), p
 
 Server extensions are GPL-3.0. Exporter-derived code retains its MIT notice. See [THIRD_PARTY.md](THIRD_PARTY.md). This community project is unaffiliated with the game's operators or rights holders.
 
-Run the self-contained tests with `uv run --locked python -m unittest discover -s tests -v` (21 tests). `tests/check_running.py` additionally checks a running local test installation on port 8125 and reads its private linking credentials without printing them. Do not run it against someone else's server.
+Run the self-contained tests with `uv run --locked python -m unittest discover -s tests -v` (24 tests). `tests/check_running.py` additionally checks a running local test installation on port 8125 and reads its private linking credentials without printing them. Do not run it against someone else's server.

@@ -51,6 +51,13 @@ def prepare(a):
     print('Prepared pinned backend and local master data. Start PostgreSQL, then import-account or fresh-account.')
     print('Missing optional media is not downloaded automatically. Run doctor to inspect local coverage.')
 
+def fresh_song_tickets():
+    value=json.loads((ROOT/'preservation-rules.json').read_text()).get('fresh_song_tickets',10000)
+    if type(value) is not int or not 0 <= value <= 1000000:
+        raise ValueError('fresh_song_tickets must be an integer between 0 and 1000000')
+    return value
+
+
 def schema():
     bootstrap()
     subprocess.run([sys.executable,'-m','scripts.database_setup','--config',str(VENDOR/'config.yml')],cwd=VENDOR,check=True,stdout=subprocess.DEVNULL)
@@ -65,6 +72,7 @@ def transfer_config(uid,mode,bridge=None):
 async def account(a):
     if (PRIVATE/'account.json').exists(): raise RuntimeError('This installation already has an account. Import refuses to overwrite it.')
     raw=None;bridge=None;rows=[]
+    starter_tickets=fresh_song_tickets() if a.command=='fresh-account' else 0
     if a.command=='import-account':
         from exporter import verify_export
         verify_export(a.archive)
@@ -114,6 +122,9 @@ async def account(a):
                 await conn.execute(add_hash_user_id(user['hashUserId'],uid))
             else:
                 await create_default_user_data(conn,uid,a.name)
+                if starter_tickets:
+                    from helpers.things import grant_things_consolidated
+                    await grant_things_consolidated(conn,uid,[(1,130001,starter_tickets)])
                 await conn.execute(add_hash_user_id(hash_id(uid),uid))
         restored=await user_data(app,uid)
         state,credentials=transfer_config(uid,'import' if raw else 'fresh',bridge)
@@ -124,7 +135,7 @@ async def account(a):
         write(PRIVATE/'account.json',json.dumps(state,indent=2))
         print('Account ready. Linking credentials: private/linking-credentials.txt')
         print('Same-installation login bridge: '+('available' if bridge else 'absent; use Data Link on a compatible client'))
-        if raw is None: print('Fresh account uses upstream starter inventory. It is NOT an unlock-all account; device onboarding remains experimental.')
+        if raw is None: print(f'Fresh account receives {starter_tickets:,} song tickets (歌劇目録) plus upstream starter inventory. It is NOT an unlock-all account; device onboarding remains experimental.')
     finally:await app.close()
 
 def doctor(a):
