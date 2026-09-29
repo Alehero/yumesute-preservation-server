@@ -17,7 +17,7 @@
 2. 同じWi-FiにつながるMacまたはWindows PC。USB接続は不要です。
 3. [uv](https://docs.astral.sh/uv/getting-started/installation/)、[Git](https://git-scm.com/downloads)、起動済みの [Docker Desktop](https://docs.docker.com/desktop/)（PostgreSQL用）。既存のPostgreSQLを使う方は[詳細手順](DATA.md)へ。
 4. 端末側の [WireGuard](https://www.wireguard.com/install/)。
-5. [DATA.md](DATA.md) の構成で用意したローカルゲームデータ。**アカウント保存ツールのZIPには含まれません。** データを持っていない場合、この段階でセットアップを進められません。iPadにキャッシュがあるだけで、PCから取り出せるとは限りません。
+5. [DATA.md](DATA.md) の構成で用意したローカルゲームデータ。**アカウント保存ツールのZIPには含まれません。** 未取得の場合は、配信が続いている間に限り、下記の公式CDNからの取得を試せます。iPadにキャッシュがあるだけで、PCから取り出せるとは限りません。
 6. 引き継ぐ場合のみ、[アカウント保存ツール](https://github.com/Alehero/yumesute-account-exporter)で作成した自分のZIP。終了済みの公式サーバーから新たに取得することはできません。
 
 ## クイックスタート
@@ -26,14 +26,19 @@
 
 ### 1. データを準備してデータベースを起動
 
-`/path/to/game-data` は自分のデータフォルダーに置き換えてください。Windowsでは `"C:\Users\You\Documents\game-data"` のように指定します。
+新しく準備する場合は、公式CDNから基準版のiOSデータを直接取得できます。
 
 ```sh
-uv run --locked python server.py prepare --data-dir "/path/to/game-data"
+uv run --locked python download_data.py
+uv run --locked python server.py prepare --data-dir data
 docker compose up -d --wait db
 ```
 
-`prepare` はマスターを読み込み、秘密鍵・パスワードをインストールごとに生成します。元のデータはコピーされ、変更されません。楽曲や画像を公式サーバーから自動取得する機能はありません。
+公式ゲームへのログインは不要です。マスター、iOS 1.96.0のアセット（音声・MV用素材など）、譜面・設定ファイル、マスターに記載されたコミックを取得します。取得元と準備後のコピーを合わせて、**空き容量は約45 GB**を目安にしてください。実際の容量は変わります。取得中はPCをスリープさせないでください。中断後は同じコマンドで再開できます。完了済みファイルはチェックサムを確認してスキップし、途中のファイルはそのファイルの先頭から再取得します。
+
+**2026年9月29日に一部ファイルの取得を確認しましたが、今後の配信や全件取得は保証できません。** 失敗は `data/download-report.jsonl` に記録します。保存作業時点でも、一部の譜面は404でした。不足があると終了コード2になるため、準備へ進む前にレポートを確認してください。一部の機能が動いても、完全な保存を意味しません。アプリ本体や全シナリオ・バナーの取得、3.0.0への対応は含みません。[詳細](DATA.md)もご確認ください。
+
+すでにデータがある場合は取得を省略し、`uv run --locked python server.py prepare --data-dir "/path/to/game-data"` を実行してからDBを起動します。Windowsのパス例は `"C:\Users\You\Documents\game-data"` です。`prepare` は秘密鍵・パスワードを生成し、元データを変更せずコピーします。
 
 ### 2A. 保存したアカウントを使う
 
@@ -105,4 +110,4 @@ PCを起動したまま、ターミナルを開いておいてください。Mac
 
 本リポジトリのサーバー拡張はGPL-3.0。保存ツール由来のコードにはMITの著作権表示も保持しています。[THIRD_PARTY.md](THIRD_PARTY.md)を参照してください。公式運営・権利者とは無関係の取り組みです。
 
-単体テストは `uv run --locked python -m unittest discover -s tests -v` で実行できます（13件）。`tests/check_running.py` はポート8125で動作中の自分のテスト環境と、その環境の非公開連携情報を使ってAPIを確認します。連携情報は出力しません。他の方のサーバーに対して実行しないでください。
+単体テストは `uv run --locked python -m unittest discover -s tests -v` で実行できます（18件）。`tests/check_running.py` はポート8125で動作中の自分のテスト環境と、その環境の非公開連携情報を使ってAPIを確認します。連携情報は出力しません。他の方のサーバーに対して実行しないでください。

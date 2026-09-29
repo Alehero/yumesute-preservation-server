@@ -247,3 +247,22 @@ replays and the separate iPhone v3 experiment are not active in this release.
   and troubleshooting to describe observed results rather than a universal claim.
 - Documentation only; no server behavior or verification status changed. Gameplay
   inventory remains 29 groups, based on the pinned server-of-dreams backend.
+
+## Official-CDN downloader — September 29, 2026
+
+- Implemented/tested: direct official-source downloader for pinned raw master, iOS
+  1.96.0 catalogs/bundles, master-listed charts/configs and comics. No game API login
+  required. File-level restart, checksum verification, atomic writes, bounded workers,
+  explicit missing-file reports and English/Japanese setup instructions.
+- Tests: all 18 unit tests pass, including corruption repair, hash/length rejection,
+  path validation, 403/404/redirect handling and verified-file skipping. Eight initial
+  official-CDN probes returned HTTP 200 and matched preserved bytes. The new downloader
+  separately fetched master/catalogs, sample bundles/audio/chart/comic and skipped
+  verified files on rerun. Enumerated 36,333 media paths; not a full download test.
+- Device-confirmed: no new device result in this batch. Existing iPad results remain
+  as documented. Fresh 3.0.0 onboarding remains unresolved. Some chart paths were
+  previously 404; full static banners/story coverage and future CDN availability are
+  not guaranteed. No game-media files or credentials are published.
+- Captured-only features remain unchanged. Gameplay inventory stays at **29 groups**;
+  downloader/setup infrastructure is not another gameplay feature. Backend remains
+  UnknownSekai/server-of-dreams at 3cfca23267fb0f79d7336732db768e1510f20313.

@@ -17,7 +17,7 @@ An unofficial local server for preserved **World Dai Star: Yume no Stellarium** 
 2. Mac or Windows PC on the same Wi-Fi. No USB cable is required.
 3. [uv](https://docs.astral.sh/uv/getting-started/installation/), [Git](https://git-scm.com/downloads), and running [Docker Desktop](https://docs.docker.com/desktop/) for PostgreSQL. Existing PostgreSQL users can follow [DATA.md](DATA.md).
 4. The official [WireGuard app](https://www.wireguard.com/install/) on the device.
-5. A local game-data folder arranged as described in [DATA.md](DATA.md). **It is not included in an account-export ZIP.** If you do not have these files, setup is blocked here. Having media cached on an iPad does not automatically make it exportable to the PC.
+5. A local game-data folder arranged as described in [DATA.md](DATA.md). **It is not included in an account-export ZIP.** You can try the official-CDN downloader below while those files remain available. Having media cached on an iPad does not automatically make it exportable to the PC.
 6. For import only: your own ZIP from the [account exporter](https://github.com/Alehero/yumesute-account-exporter). The exporter cannot fetch a new account from an offline official server.
 
 ## Quick start
@@ -26,14 +26,19 @@ An unofficial local server for preserved **World Dai Star: Yume no Stellarium** 
 
 ### 1. Prepare data and start the database
 
-Replace `/path/to/game-data` with your data folder. A Windows example is `"C:\Users\You\Documents\game-data"`.
+For a new setup, download the reference iOS data directly from the official CDN:
 
 ```sh
-uv run --locked python server.py prepare --data-dir "/path/to/game-data"
+uv run --locked python download_data.py
+uv run --locked python server.py prepare --data-dir data
 docker compose up -d --wait db
 ```
 
-Preparation loads your master data and generates per-installation secrets. It copies supplied files without changing the originals. It does not automatically download missing songs/images from official servers.
+The downloader does not need an official game login. It fetches master data, iOS 1.96.0 asset bundles (including audio/MV resources), chart/config files and master-listed comics. Allow roughly **45 GB of free space** for the downloaded source plus the prepared copy; actual usage varies. Keep the computer awake. Rerun the same download command after interruption: completed files are checksum-checked and skipped; an interrupted file restarts from its beginning.
+
+**Availability was sampled on September 29, 2026; it is not guaranteed.** Read `data/download-report.jsonl` for failures. Some master-listed charts already returned 404 in the preservation capture. The command exits with code 2 if any media is missing; review the report before proceeding. A partial download may support some features, but is not a complete installation. This downloader does not supply the app, fix 3.0.0, or fetch every story/banner. See [DATA.md](DATA.md).
+
+If you already have local game data, skip downloading and use `uv run --locked python server.py prepare --data-dir "/path/to/game-data"`, then start the database. A Windows path can be `"C:\Users\You\Documents\game-data"`. Preparation generates per-installation secrets and copies supplied files without changing the originals.
 
 ### 2A. Import a saved account
 
@@ -93,7 +98,7 @@ Keep the computer awake and terminal open. To stop: **turn WireGuard off, then p
 - **Wrong LAN address:** `uv run --locked python server.py start --host 192.168.1.23` (use your computer's address). Re-import the changed QR configuration.
 - **Port conflict:** defaults are backend TCP 8125 (loopback), WireGuard UDP 51822, certificate TCP 8766, and PostgreSQL TCP 55433 (loopback). Use `start --port 8126 --wg-port 51823 --cert-port 8767`. Change DB port in both `.env` and `vendor/server-of-dreams/config.yml` before initialization.
 - **Certificate/tunnel failure:** check same LAN, guest-network isolation, computer firewall, and full certificate trust. Allow only the required traffic on your home network. Internet port forwarding is unnecessary.
-- **Missing images/songs or HTTP 404:** check `doctor` and `logs/backend.log`. Missing media must be supplied locally. File counts are not proof of completeness. Do not clear the app cache to troubleshoot this.
+- **Missing images/songs or HTTP 404:** check `doctor` and `logs/backend.log`. Rerun the downloader for covered files, then copy recovered files into the matching server paths in DATA.md. Do not rerun prepare after configuring an account; it intentionally refuses that. Other missing media must be supplied locally. File counts are not proof of completeness. Do not clear the app cache to troubleshoot this.
 - **EOS after linking on 3.0.0:** this also occurred in our test of a newly installed client. Repeating the transfer and restarting did not resolve it; we do not yet have a verified fix.
 - **Database connection failure:** check Docker Desktop and `docker compose ps`. Changing `.env` does not change a password inside an existing database volume. Do not casually delete the volume.
 
@@ -105,4 +110,4 @@ Backend: [server-of-dreams](https://github.com/UnknownSekai/server-of-dreams), p
 
 Server extensions are GPL-3.0. Exporter-derived code retains its MIT notice. See [THIRD_PARTY.md](THIRD_PARTY.md). This community project is unaffiliated with the game's operators or rights holders.
 
-Run the self-contained tests with `uv run --locked python -m unittest discover -s tests -v` (13 tests). `tests/check_running.py` additionally checks a running local test installation on port 8125 and reads its private linking credentials without printing them. Do not run it against someone else's server.
+Run the self-contained tests with `uv run --locked python -m unittest discover -s tests -v` (18 tests). `tests/check_running.py` additionally checks a running local test installation on port 8125 and reads its private linking credentials without printing them. Do not run it against someone else's server.
