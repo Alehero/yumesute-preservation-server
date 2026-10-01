@@ -25,7 +25,7 @@ async def ensure_gift(app, uid):
     if uid is None or not count:
         return
     async with app.acquire_db() as c, c.transaction():
-        await c.conn.execute('SELECT pg_advisory_xact_lock(724610, $1::int)', uid)
+        await c.conn.execute('SELECT pg_advisory_xact_lock($1::bigint)', uid)
         await c.conn.execute('CREATE TABLE IF NOT EXISTS preservation_gifts (user_id bigint, event text, inbox_id bigint, PRIMARY KEY(user_id,event))')
         existing = await c.conn.fetchval('SELECT inbox_id FROM preservation_gifts WHERE user_id=$1 AND event=$2',uid,EVENT)
         if existing is not None:
@@ -45,7 +45,7 @@ async def receive(app, uid, inbox_ids):
     now = int(time.time()*1000000)
     types, received_ids = set(), set()
     async with app.acquire_db() as c, c.transaction():
-        await c.conn.execute('SELECT pg_advisory_xact_lock(724610, $1::int)',uid)
+        await c.conn.execute('SELECT pg_advisory_xact_lock($1::bigint)',uid)
         for row in await c.fetch(get_inboxes_by_ids(uid,ids)):
             if row.hasReceived:
                 continue

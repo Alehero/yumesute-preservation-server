@@ -421,3 +421,10 @@ Deployed locally; device visibility/claim confirmation remains pending. The iPad
 now reaches the shared starter save; its completed tutorial is from the iPhone
 test, not evidence of clean registration/name-popup behavior. Inventory remains
 30 groups on pinned UnknownSekai/server-of-dreams 3cfca23267fb0f79d7336732db768e1510f20313.
+
+## 2026-10-01 — Imported-account gift compatibility
+
+- Implemented/tested: gift creation and claiming now use a 64-bit PostgreSQL advisory lock, supporting original account IDs above 2,147,483,647. Imported-save user-data request returns HTTP 200; 34 unit tests pass.
+- Device-confirmed: starter song-ticket gift displayed and was claimed.
+- Pending device test: original-account song list on iPad; starter song list still empty on iPad but works on iPhone. No chart-visibility fix claimed.
+- Captured-only: no new official captures. Feature-group inventory remains 30; this repairs the existing gift feature. Backend remains pinned to UnknownSekai/server-of-dreams at 3cfca23267fb0f79d7336732db768e1510f20313.
