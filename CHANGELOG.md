@@ -27,8 +27,9 @@ was an independent protocol reference, not a second backend merged into this rel
 - **Server-tested:** ZIP validity, download without account mutation, credential and
   outage failures, explicit fallback reassignment, retained local progress, single-use
   import, and host/origin/request-token checks. The existing 34 tests also pass.
-- **Device confirmation pending:** restoration through this browser flow followed by
-  game login. Official API availability and compatible app/media remain prerequisites.
+- **Device-confirmed:** browser backup/import followed by game login restored the
+  account successfully. Automatic in-game recovery is being tested separately.
+  Official API availability and compatible app/media remain prerequisites.
 - Gameplay inventory remains **30 groups**. This extends account-preservation tooling
   around the credited pinned upstream backend, not gameplay or multiplayer support.
 
