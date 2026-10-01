@@ -21,6 +21,7 @@ from models import AuthenticateResult, MasterDataManifest, TakeOverAccountPayloa
 from scripts._sirius import _unpack_all, _decompress
 from preservation_dates import preserved_master
 from account_compat import merge_account
+from circle_compat import install as install_circle_compat
 import routes.account
 import routes.data
 ACCOUNT = json.loads((ROOT/'private/account.json').read_text())
@@ -76,6 +77,7 @@ async def no_accidental_registration(request:Request):
     return respond(AccountRegistResult(token='',error_type=1))
 
 app.router.routes[0:0]=router.routes
+install_circle_compat(app)
 
 @app.middleware('http')
 async def local_files(request,call_next):
