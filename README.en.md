@@ -48,7 +48,7 @@ If you already have local game data, skip downloading and use `uv run --locked p
 
 **Starting fresh? Skip this step.** The server creates your starter save automatically when first started. New saves begin at the opening tutorial; the registration request saves the name entered in game.
 
-New accounts receive **10,000 song tickets (歌劇目録)** directly in inventory, once. You can change `fresh_song_tickets` in `preservation-rules.json` before first startup (0 disables it). This is a preservation allowance, not an official reward or unlock-all preset. Song and chart unlock conditions still apply.
+All local accounts, including imports, receive a **permanent gift of 10,000 song tickets (歌劇目録)**. Claim **楽曲解放サポート** from Presents; it is available once per account with no expiry. Set `preservation_song_tickets` in `preservation-rules.json` before the gift is issued to change the amount (0 disables new issuance). Earlier direct starter grants are retained, so those accounts can also claim this gift. This is a local preservation reward, not an official event or unlock-all preset; song and chart unlock conditions still apply.
 
 To restore an account export instead, run this **before the first server start**:
 

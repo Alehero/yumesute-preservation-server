@@ -48,6 +48,8 @@ async def authenticate(payload, app):
     return await upstream_authenticate(payload,app)
 
 async def user_data(app,uid):
+    from preservation_gift import ensure_gift
+    await ensure_gift(app, uid)
     current=await database_user_data(app,uid)
     if uid != ACCOUNT['user_id'] or ACCOUNT['mode']!='import': return current
     raw=(ROOT/'private/account-snapshot/user-data.response.bin').read_bytes()
@@ -82,6 +84,8 @@ async def register_local_starter(request:Request):
 app.router.routes[0:0]=router.routes
 from reroll import install as install_reroll
 install_reroll(app)
+from preservation_gift import install as install_gift
+install_gift(app)
 
 @app.middleware('http')
 async def local_files(request,call_next):

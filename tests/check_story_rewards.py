@@ -43,11 +43,16 @@ async def main(root):
         assert not parsed[0], 'Response fault'
         return parsed[1]
     try:
-        initial=await balance();assert initial[(1,130001)]==10000
-        print('PASS: fresh account starts with 10,000 song tickets')
+        from preservation_gift import ensure_gift, receive, EVENT
+        await ensure_gift(app,uid)
+        async with app.acquire_db() as c:
+            gift=await c.conn.fetchval('SELECT inbox_id FROM preservation_gifts WHERE user_id=$1 AND event=$2',uid,EVENT)
+        await receive(app,uid,[gift])
+        initial=await balance();assert initial[(1,130001)]>=10000
+        print('PASS: account can claim 10,000 song tickets')
         song=next(m for m in cache.music_master if not m.invisible and int(m.unlock_condition_type)==10)
         response=await buy_music(req,song.id_);assert not envelope(response.body)[0]
-        after_buy=await balance();assert after_buy[(1,130001)]==9990
+        after_buy=await balance();assert after_buy[(1,130001)]==initial[(1,130001)]-10
         async with app.acquire_db() as conn:
             assert await conn.conn.fetchval('SELECT "isPossession" FROM music WHERE "userId"=$1 AND "musicMasterId"=$2',uid,song.id_)
         print('PASS: song purchase grants ownership and consumes 10 tickets')

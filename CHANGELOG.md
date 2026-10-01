@@ -389,3 +389,22 @@ Captured-only: no new official captures. Feature inventory remains **30**, based
  on pinned UnknownSekai/server-of-dreams
 `3cfca23267fb0f79d7336732db768e1510f20313`. Existing scoring/lesson approximations
 and incomplete multiplayer/circles/Theater League remain documented limitations.
+
+
+## October 1, 2026 — permanent song-ticket gift
+
+Implemented/tested: new and imported local accounts receive a one-time, nonexpiring
+「楽曲解放サポート」inbox gift of 10,000 song tickets. New issuance is configurable
+with preservation_song_tickets. Default direct fresh-account allowance is now zero;
+previous direct grants remain, and those accounts can also claim this gift.
+Issuance persists separately from inbox rows, preventing reissue after cleanup.
+Inbox claims now run transactionally with per-account locking and deduplicated IDs.
+Disposable database tests confirm one-time issuance, no inventory change before
+claiming, concurrent/duplicate claim safety, and no reissue after inbox cleanup.
+34 unit tests pass. Deployed to the starter test server; gift display and claim
+on a physical device remain unverified. No new official captures.
+
+This is a local preservation gift, not a recreated official event or an unlock-all
+feature. Stella/Olivier requirements still apply and remain under investigation.
+Feature inventory stays **30** (existing rewards group). Backend remains pinned to
+UnknownSekai/server-of-dreams 3cfca23267fb0f79d7336732db768e1510f20313.
