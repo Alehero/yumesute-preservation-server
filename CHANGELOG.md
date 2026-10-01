@@ -28,7 +28,8 @@ was an independent protocol reference, not a second backend merged into this rel
   outage failures, explicit fallback reassignment, retained local progress, single-use
   import, and host/origin/request-token checks. The existing 34 tests also pass.
 - **Device-confirmed:** browser backup/import followed by game login restored the
-  account successfully. Automatic in-game recovery is being tested separately.
+  account successfully. In-game transfer recovery into a clean local server is also
+  device-confirmed; normal login using an official token is being tested separately.
   Official API availability and compatible app/media remain prerequisites.
 - Gameplay inventory remains **30 groups**. This extends account-preservation tooling
   around the credited pinned upstream backend, not gameplay or multiplayer support.
@@ -50,9 +51,9 @@ was an independent protocol reference, not a second backend merged into this rel
   outages, malformed replies, service restart and real transfer/auth/data routes.
   A simulated total EOS forbids official calls for known accounts and verifies that
   local progression survives. The existing 34-test suite and running-server checks pass.
-- **Device confirmation pending:** the integrated automatic-import flow is ready for
-  testing. Earlier official transfer/login captures establish protocol evidence only;
-  they do not certify this new end-to-end flow.
+- **Device-confirmed:** entering official transfer credentials in game automatically
+  recovered the account into a clean local server and allowed play. Normal title login
+  using a retained official token remains pending a separate device check.
 - Recovery is enabled by default and configurable with `official_account_recovery`.
   One official identity is supported per personal installation, alongside its retained
   starter. Apple sign-in recovery is not implemented. Official availability is needed
