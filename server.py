@@ -122,6 +122,8 @@ async def account(a):
                 await conn.execute(add_hash_user_id(user['hashUserId'],uid))
             else:
                 await create_default_user_data(conn,uid,a.name)
+                from starter_music import grant_starter_music
+                await grant_starter_music(conn, uid)
                 if starter_tickets:
                     from helpers.things import grant_things_consolidated
                     await grant_things_consolidated(conn,uid,[(1,130001,starter_tickets)])

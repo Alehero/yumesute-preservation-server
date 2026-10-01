@@ -50,6 +50,8 @@ async def authenticate(payload, app):
 async def user_data(app,uid):
     from preservation_gift import ensure_gift
     await ensure_gift(app, uid)
+    from starter_music import ensure_starter_music
+    await ensure_starter_music(app, uid, ACCOUNT)
     current=await database_user_data(app,uid)
     if uid != ACCOUNT['user_id'] or ACCOUNT['mode']!='import': return current
     raw=(ROOT/'private/account-snapshot/user-data.response.bin').read_bytes()

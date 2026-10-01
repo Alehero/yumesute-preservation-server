@@ -428,3 +428,9 @@ test, not evidence of clean registration/name-popup behavior. Inventory remains
 - Device-confirmed: starter song-ticket gift displayed and was claimed.
 - Pending device test: original-account song list on iPad; starter song list still empty on iPad but works on iPhone. No chart-visibility fix claimed.
 - Captured-only: no new official captures. Feature-group inventory remains 30; this repairs the existing gift feature. Backend remains pinned to UnknownSekai/server-of-dreams at 3cfca23267fb0f79d7336732db768e1510f20313.
+
+## 2026-10-01 — Starter difficulty fallback
+
+- Implemented/tested: fresh saves receive default song 244, 「錆びついた胸に一雫の心を」, with STELLA and OLIVIER I released. Existing starter saves are repaired at login; imported saves are unchanged. Repeated grants are idempotent and create no scores or clear records. This is an intentional preservation fallback, not an official unlock rule.
+- Device-confirmed diagnosis: the same starter save displayed songs after the iPad switched from its remembered OLIVIER selection to NORMAL using the imported save. The new fallback still needs device confirmation.
+- Captured-only: no new captures. Inventory remains 30 feature groups; this is a starter-account compatibility repair on the pinned UnknownSekai/server-of-dreams backend.

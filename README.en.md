@@ -130,3 +130,5 @@ the game. If login works but gacha hangs, check terminal TLS errors and certific
 identity before clearing game data. Reusing the working CA resolved this symptom
 in our device test; the game's internal certificate-validation behavior remains
 unconfirmed.
+
+Starter accounts include 「錆びついた胸に一雫の心を」 with STELLA and OLIVIER I unlocked, so a device remembering those difficulties has a selectable chart. This preservation fallback also applies to existing local starter saves; imported accounts retain their progression.
