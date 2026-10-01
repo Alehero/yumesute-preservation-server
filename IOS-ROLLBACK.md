@@ -65,7 +65,7 @@ ideviceinstaller -u DEVICE_UDID list -b com.kms.worlddaistar --xml
 uv run --locked python server.py start --ca-dir "/以前の環境へのパス/private/mitmproxy"
 ```
 
-証明書フォルダーと秘密鍵は公開しないでください。新しいインストールや新規アカウントでは、タイトルの **メニュー → データ連携 → 連携パスワード入力** から`private/linking-credentials.txt`の情報を入力します。Appleや公式ゲームの認証情報とは別の、ローカル専用情報です。
+証明書フォルダーと秘密鍵は公開しないでください。新規登録ではローカルの初期セーブを自動選択できます。古いトークンが残る場合や保存アカウントを使う場合は、タイトルの **メニュー → データ連携 → 連携パスワード入力** から`private/linking-credentials.txt`の情報を入力します。Appleや公式ゲームの認証情報とは別の、ローカル専用情報です。
 
 起動中のローカルサーバーから素材のダウンロードを完了させます。IPAだけに全楽曲・音声・MVが含まれるわけではありません。端末とPCを同じWi-Fiに接続し、PCをスリープさせず、ホーム → 楽曲 → リザルト → 再起動で保存を確認してください。
 

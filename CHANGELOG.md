@@ -341,3 +341,28 @@ Feature-group inventory: **30** (the preceding 29 groups plus persistent reroll
 sessions). Certificate and documentation fixes do not add gameplay groups.
 Backend credit: UnknownSekai/server-of-dreams, pinned
 `3cfca23267fb0f79d7336732db768e1510f20313`; no upstream migration in this release.
+
+
+## October 1, 2026 — automatic starter onboarding
+
+Implemented/tested:
+- Starting a prepared installation without an account creates the same Player
+  starter save as the CLI, retaining its empty-database and overwrite safeguards.
+- Clean registration and explicit empty-token login select the configured fresh
+  save. Repeat registration updates credentials only, without resetting progress
+  or repeating starter grants. Imported saves require normal login or Data Link.
+- Nonempty foreign tokens are not redirected to a different save. Missing/banned
+  starter records are rejected. One installation remains one shared save.
+- 33 unit tests pass. Live local API checks also pass for repeated registration,
+  registered-token login, empty-token login, unchanged player data and foreign-token
+  rejection. Deployed to the iPhone test server.
+- English/Japanese setup and rollback guides updated.
+
+Device confirmation: pending a clean-client test; do not delete an existing
+working installation or its cached assets to test this. Clients retaining an old
+login token still need Data Link. No new official traffic was captured.
+
+Feature inventory remains **30**: this improves existing fresh-account onboarding,
+not a separate gameplay group. Pinned backend: UnknownSekai/server-of-dreams
+`3cfca23267fb0f79d7336732db768e1510f20313`. Existing scoring/lesson approximations
+and incomplete multiplayer/circles/Theater League are unchanged.

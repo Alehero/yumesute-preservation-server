@@ -56,7 +56,7 @@ If the export includes a login association (“bridge”), the same app installa
 
 ### 2B. Create a fresh account
 
-Use this instead of 2A in an empty installation:
+For a new local Player, you can skip account creation: `server.py start` creates the starter save automatically when no account is configured. Import your export **before starting** if you want to restore it instead. To choose a name in an empty installation:
 
 ```sh
 uv run --locked python server.py fresh-account --name "Player"
@@ -67,7 +67,6 @@ This creates an independent local account using upstream starter data, plus **10
 ### 3. Start and connect the device
 
 ```sh
-uv run --locked python server.py doctor
 uv run --locked python server.py start
 ```
 
@@ -79,7 +78,7 @@ A setup page opens in your browser. If it does not, open `private/setup.html`.
 4. Install the downloaded profile under **Settings → General → VPN & Device Management**.
 5. Match the certificate name/fingerprint shown in setup; another “mitmproxy” profile may have a different key. Reuse a working local store with `server.py start --ca-dir "/path/to/old/private/mitmproxy"` (saved for future starts). Enable **full trust** under **General → About → Certificate Trust Settings**. Installing the profile alone is insufficient.
 6. Fully close and reopen the game. For a bridged import on its original installation, try entering the title screen normally.
-7. If normal login does not work, or for a fresh account, use **title Menu → データ連携 → 連携パスワード入力**. Enter the linking ID/password from `private/linking-credentials.txt`. These are **local credentials, not your official linking password or Apple ID**. Check the displayed account name. Linking replaces the account selection on the receiving device; preserve any existing account you want to keep first.
+7. A clean client registering or logging in with no token automatically selects the local starter save. This installation has **one shared save**, not one per device; registration reuses it without resetting progress. Imported saves never use this automatic path. Automatic entry is API-tested; clean-client device confirmation is pending. If the client has an old/foreign token or automatic entry does not work, use **title Menu → データ連携 → 連携パスワード入力**. Enter the linking ID/password from `private/linking-credentials.txt`. These are **local credentials, not your official linking password or Apple ID**. Check the displayed account name. Linking replaces the account selection on the receiving device; preserve any existing account you want to keep first.
 8. Test **home → solo play → results → app restart**, checking that progress persists.
 
 Keep the computer awake and terminal open. To stop: **turn WireGuard off, then press Control+C**. Stop PostgreSQL with `docker compose stop`. Next time, run `docker compose up -d --wait db` and `server.py start`. Do not re-import your account each session.
@@ -114,7 +113,7 @@ Backend: [server-of-dreams](https://github.com/UnknownSekai/server-of-dreams), p
 
 Server extensions are GPL-3.0. Exporter-derived code retains its MIT notice. See [THIRD_PARTY.md](THIRD_PARTY.md). This community project is unaffiliated with the game's operators or rights holders.
 
-Run the self-contained tests with `uv run --locked python -m unittest discover -s tests -v` (28 tests). `tests/check_running.py` additionally checks a running local test installation on port 8125 and reads its private linking credentials without printing them. Do not run it against someone else's server.
+Run the self-contained tests with `uv run --locked python -m unittest discover -s tests -v` (33 tests). `tests/check_running.py` additionally checks a running local test installation on port 8125 and reads its private linking credentials without printing them. Do not run it against someone else's server.
 
 ### Certificate identity and reuse
 

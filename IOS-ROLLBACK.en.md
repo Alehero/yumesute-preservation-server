@@ -65,7 +65,7 @@ Return to [Quick start](README.en.md#quick-start): prepare local media, create/i
 uv run --locked python server.py start --ca-dir "/path/to/old/private/mitmproxy"
 ```
 
-Keep that directory local; never distribute its private key. For a new installation/fresh account, enter `private/linking-credentials.txt` at **Menu → データ連携 → 連携パスワード入力**. These are local credentials, separate from Apple and official-game credentials.
+Keep that directory local; never distribute its private key. A clean client can register into the local starter save automatically. If an old token remains or you are importing an account, enter `private/linking-credentials.txt` at **Menu → データ連携 → 連携パスワード入力**. These are local credentials, separate from Apple and official-game credentials.
 
 Allow downloads from the running local server. The IPA alone does not contain all songs/voices/MVs. Keep the computer awake and both devices on the same Wi-Fi. Test home → song → results → restart on your own setup.
 

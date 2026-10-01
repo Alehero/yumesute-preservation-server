@@ -161,7 +161,13 @@ def doctor(a):
         asyncio.run(check());print('OK      database account')
     if failed:raise RuntimeError('Setup incomplete; see README')
 
+def ensure_start_account():
+    if not (PRIVATE/'account.json').exists():
+        print('No account configured; creating a local Player starter save.')
+        asyncio.run(account(argparse.Namespace(command='fresh-account', name='Player')))
+
 def start(a):
+    ensure_start_account()
     doctor(a)
     env=dict(os.environ,YUMESUTE_PORT=str(a.port))
     logdir=ROOT/'logs';logdir.mkdir(exist_ok=True)

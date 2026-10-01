@@ -21,6 +21,7 @@ from models import AuthenticateResult, MasterDataManifest, TakeOverAccountPayloa
 from scripts._sirius import _unpack_all, _decompress
 from preservation_dates import preserved_master
 from account_compat import merge_account
+from starter_login import register_starter, authenticate_starter
 import routes.account
 import routes.data
 ACCOUNT = json.loads((ROOT/'private/account.json').read_text())
@@ -34,6 +35,8 @@ def manifest():
     return MasterDataManifest(**data)
 
 async def authenticate(payload, app):
+    starter = await authenticate_starter(payload, app, ACCOUNT)
+    if starter is not None: return starter
     expected=ACCOUNT.get('token_sha256')
     if expected and payload and hmac.compare_digest(hashlib.sha256((payload.login_token or '').encode()).hexdigest(), expected):
         async with app.acquire_db() as conn:
@@ -70,10 +73,9 @@ async def transfer(request:Request):
     return respond(TakeOverAccountResult(is_success=True,user_id=row['hashUserId'],name=row['name'],rank=row['playerRank'],login_token=make_jwt(ACCOUNT['user_id'])))
 
 @router.post('/api/Account/Register')
-async def no_accidental_registration(request:Request):
-    # One account per install. New accounts are created explicitly through the CLI.
-    from models import AccountRegistResult
-    return respond(AccountRegistResult(token='',error_type=1))
+async def register_local_starter(request:Request):
+    # Reuse this installation's fresh save; never reset it or expose an import.
+    return respond(await register_starter(request.app, ACCOUNT))
 
 app.router.routes[0:0]=router.routes
 from reroll import install as install_reroll
