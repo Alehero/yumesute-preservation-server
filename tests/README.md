@@ -31,3 +31,10 @@ official service and the disposable `yumesute_recovery_checks` database to test
 browser request protection, no-mutation export, archive verification, and explicit
 starter-fallback reassignment without overwriting local progress. Reinitialize the
 disposable database and run the preceding recovery check before repeating it.
+
+`check_circle_compat.py` checks the Circle compatibility handlers against the pinned
+MessagePack models using an in-memory database stub. It verifies route precedence,
+empty discovery/ranking lists, missing-circle status, all four company objects and
+account-scoped support progress/date serialization. It makes no external requests or
+account changes. Passing these checks does not certify playable circles or the
+reported rank-30 client crash; those require device testing.
