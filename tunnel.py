@@ -15,12 +15,21 @@ import webbrowser
 
 import mitmproxy_rs
 from mitmproxy import options
+from certificate_store import prepare_ca
 from mitmproxy.tools.dump import DumpMaster
 import qrcode
 import qrcode.image.svg
 
 class LocalServer:
     def __init__(self, port): self.port = port
+    def tls_failed_client(self, data):
+        host = data.conn.sni or data.context.server.sni
+        if host in ("lb-api.wds-stellarium.com", "assets-e.wds-stellarium.com", "lb-realtime.wds-stellarium.com"):
+            print(f"Game TLS connection failed for {host}: {data.conn.error}. "
+                  "Check the certificate name/fingerprint in setup.html and enable full trust. "
+                  "If another installation already works, restart with --ca-dir pointing to its local CA store.",
+                  flush=True)
+
     def request(self, flow):
         host = flow.request.pretty_host
         names = (host, getattr(flow.server_conn, "sni", None))
@@ -47,7 +56,7 @@ def write_private(path, text):
     path.chmod(0o600)
 
 
-def setup_page(private, host, wg_port, cert_port):
+def setup_page(private, host, wg_port, cert_port, ca_name="", ca_fingerprint=""):
     keys_path = private / "wireguard-keys.json"
     if keys_path.exists():
         keys = json.loads(keys_path.read_text())
@@ -74,14 +83,20 @@ def setup_page(private, host, wg_port, cert_port):
     page = f"""<!doctype html><html lang="en"><meta charset="utf-8"><title>Yumesute local server / ローカルサーバー</title>
 <style>body{{font:18px system-ui;max-width:850px;margin:40px auto;padding:20px;line-height:1.6;background:#faf8f6;color:#26202a}}svg{{width:330px;height:330px;background:white}}code{{background:#eee;padding:4px}}li{{margin:14px 0}}</style>
 <h1>Yumesute local server / ローカルサーバー</h1><p>This page and QR code are private. Keep the terminal running.</p>
+<p>Active certificate / 使用中の証明書: <strong>{html.escape(ca_name)}</strong><br>
+SHA-256: <code>{html.escape(ca_fingerprint)}</code></p>
+<p>Trust this exact certificate. Another profile named “mitmproxy” may belong to a different installation.
+Keep the local CA store when upgrading. Never share its private key.</p>
+<p>同じ「mitmproxy」という名前でも別の証明書の場合があります。上記の証明書を確認し、完全な信頼を有効にしてください。
+更新時は証明書フォルダーを引き継ぎ、秘密鍵は公開しないでください。</p>
 <ol><li>Connect the iPad/iPhone and computer to the same Wi-Fi. In iPad Wi-Fi settings, set HTTP Proxy to Off.</li>
 <li>Install the official WireGuard app on the iPad. Choose Add a Tunnel → Create from QR code, scan below, name it Yumesute Local, and switch it on.</li>
 <li>On the iPad, open Safari and type <strong>{html.escape(url)}</strong>. Download the certificate.</li>
-<li>Open Settings → General → VPN &amp; Device Management → downloaded mitmproxy profile → Install.
-Then General → About → Certificate Trust Settings → enable full trust for this mitmproxy certificate.</li>
+<li>Open Settings → General → VPN &amp; Device Management → downloaded profile matching the name above → Install.
+Then General → About → Certificate Trust Settings → enable full trust for this exact certificate.</li>
 <li>Fully close and reopen the compatible game. Imported accounts with a bridge should log in normally. Otherwise use Menu → Data Link → linking password, with private/linking-credentials.txt.</li>
 <li>Test home → solo play → results → restart to check persistence. Keep your original account export.</li>
-<li>Switch WireGuard off, stop the terminal with Control+C, and remove the certificate profile and export tunnel when finished.</li></ol>
+<li>Switch WireGuard off, stop the terminal with Control+C, and keep the certificate store for future sessions; remove the device profile only when you no longer use this server.</li></ol>
 <h2>日本語</h2><ol><li>端末とパソコンを同じWi-Fiに接続し、端末のHTTPプロキシをオフにします。</li>
 <li>WireGuardでQRコードを読み取り、トンネルを有効にします。他の保存用トンネルはオフにしてください。</li>
 <li>Safariで上記の証明書URLを開き、設定 → 一般 → VPNとデバイス管理からインストールします。さらに「一般 → 情報 → 証明書信頼設定」で完全な信頼を有効にします。</li>
@@ -132,13 +147,20 @@ async def run(args):
     host = str(ipaddress.IPv4Address(args.host or lan_ip()))
     private = ROOT / "private"
     private.mkdir(mode=0o700, exist_ok=True)
-    page = setup_page(private, host, args.wg_port, args.cert_port)
+    ca_dir, ca_name, ca_fingerprint = prepare_ca(private, getattr(args, "ca_dir", None))
+    page = setup_page(private, host, args.wg_port, args.cert_port, ca_name, ca_fingerprint)
     # Keep non-game TLS connections opaque. The certificate download has no TLS.
     opts = options.Options(
-        confdir=str(private / "mitmproxy"),
+        confdir=str(ca_dir),
         listen_host=host,
         mode=[f"wireguard:{private / 'wireguard-keys.json'}@{args.wg_port}"],
-        allow_hosts=[r"^(lb-api|assets-e|lb-realtime)\.wds-stellarium\.com:443$"],
+        # Some client loaders connect to the game's captured IPv4 endpoints
+        # without TLS SNI. Inspect these connections too; HTTP Host still
+        # determines whether LocalServer redirects the request.
+        allow_hosts=[
+            r"^(lb-api|assets-e|lb-realtime)\.wds-stellarium\.com(?::443)?$",
+            r"^(124\.156\.234\.209|43\.128\.248\.64)(?::443)?$",
+        ],
         ssl_insecure=False,
     )
     master = DumpMaster(opts, with_termlog=False, with_dumper=False)
@@ -161,10 +183,10 @@ async def run(args):
                 "Tunnel startup timed out; check the selected IP and UDP port"
             )
         server = serve_certificate(
-            host, args.cert_port, private / "mitmproxy/mitmproxy-ca-cert.cer"
+            host, args.cert_port, ca_dir / "mitmproxy-ca-cert.cer"
         )
         print(
-            f"Local server tunnel ready at {host}. Follow the setup page:\n{page}\nWaiting for private-server play...",
+            f"Certificate: {ca_name} (SHA-256 {ca_fingerprint})\nLocal server tunnel ready at {host}. Follow the setup page:\n{page}\nWaiting for private-server play...",
             flush=True,
         )
         if not args.no_browser:

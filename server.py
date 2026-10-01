@@ -191,7 +191,7 @@ def main():
     p=sub.add_parser('import-account');p.add_argument('archive',type=Path)
     p=sub.add_parser('fresh-account');p.add_argument('--name',default='Player')
     sub.add_parser('doctor')
-    p=sub.add_parser('start');p.add_argument('--host');p.add_argument('--port',type=int,default=8125);p.add_argument('--wg-port',type=int,default=51822);p.add_argument('--cert-port',type=int,default=8766);p.add_argument('--no-browser',action='store_true')
+    p=sub.add_parser('start');p.add_argument('--ca-dir',help='Reuse an existing local mitmproxy CA directory; saved for future starts');p.add_argument('--host');p.add_argument('--port',type=int,default=8125);p.add_argument('--wg-port',type=int,default=51822);p.add_argument('--cert-port',type=int,default=8766);p.add_argument('--no-browser',action='store_true')
     a=parser.parse_args();PRIVATE.mkdir(exist_ok=True,mode=0o700)
     if a.command=='prepare':prepare(a)
     elif a.command in ('import-account','fresh-account'):asyncio.run(account(a))

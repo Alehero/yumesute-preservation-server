@@ -14,7 +14,7 @@ An unofficial local server for preserved **World Dai Star: Yume no Stellarium** 
 ## Requirements
 
 1. A device with a compatible game client. **“Fresh account” does not mean a fresh 3.0.0 app installation will work.**
-2. Mac or Windows PC on the same Wi-Fi. No USB cable is required.
+2. Mac or Windows PC on the same Wi-Fi. No USB cable is required for play; the optional iOS rollback procedure needs one.
 3. [uv](https://docs.astral.sh/uv/getting-started/installation/), [Git](https://git-scm.com/downloads), and running [Docker Desktop](https://docs.docker.com/desktop/) for PostgreSQL. Existing PostgreSQL users can follow [DATA.md](DATA.md).
 4. The official [WireGuard app](https://www.wireguard.com/install/) on the device.
 5. A local game-data folder arranged as described in [DATA.md](DATA.md). **It is not included in an account-export ZIP.** You can try the official-CDN downloader below while those files remain available. Having media cached on an iPad does not automatically make it exportable to the PC.
@@ -23,6 +23,10 @@ An unofficial local server for preserved **World Dai Star: Yume no Stellarium** 
 ## Quick start
 
 [Download ZIP](https://github.com/Alehero/yumesute-preservation-server/archive/refs/heads/main.zip), extract it, and open Terminal or PowerShell in that folder. Run all commands below from there. First setup downloads dependencies and the pinned upstream source, so internet access is needed for installation.
+
+### 0. Check the app version
+
+Use **2.31.3 (build 2.31.3.425)**. If you accidentally updated to 3.0.0, follow the [Mac/iOS rollback guide](IOS-ROLLBACK.en.md) first. It documents our verified in-place replacement and its limits. Keep an already-working older installation unchanged. USB is needed for rollback, not normal play.
 
 ### 1. Prepare data and start the database
 
@@ -58,7 +62,7 @@ Use this instead of 2A in an empty installation:
 uv run --locked python server.py fresh-account --name "Player"
 ```
 
-This creates an independent local account using upstream starter data, plus **10,000 song tickets (歌劇目録, item 130001)** directly in inventory. This generous preservation allowance is configurable with `fresh_song_tickets` in `preservation-rules.json` before account creation (0 disables it). It applies once to fresh accounts only; imported accounts retain their captured resources. Songs still have their normal purchase/story/chart conditions. **It is not an unlock-all preset**, nor a recovery of your official account. Fresh-account tutorial/home onboarding remains device-unverified. A compatible client and game media are still required.
+This creates an independent local account using upstream starter data, plus **10,000 song tickets (歌劇目録, item 130001)** directly in inventory. This generous preservation allowance is configurable with `fresh_song_tickets` in `preservation-rules.json` before account creation (0 disables it). It applies once to fresh accounts only; imported accounts retain their captured resources. Songs still have their normal purchase/story/chart conditions. **It is not an unlock-all preset**, nor a recovery of your official account. Fresh-account tutorial/home onboarding and initial draw → reroll → confirmation are device-confirmed on the downgraded iPhone. Reroll odds are approximations; confirm persistence after restarting on your own device. A compatible client and game media are still required.
 
 ### 3. Start and connect the device
 
@@ -73,7 +77,7 @@ A setup page opens in your browser. If it does not, open `private/setup.html`.
 2. In WireGuard, choose **Add a Tunnel → Create from QR code**, scan the setup-page QR, and turn it on. The QR contains a private key: do not share it.
 3. Open the displayed certificate URL in device Safari.
 4. Install the downloaded profile under **Settings → General → VPN & Device Management**.
-5. Enable **full trust** under **General → About → Certificate Trust Settings**. Installing the profile alone is insufficient.
+5. Match the certificate name/fingerprint shown in setup; another “mitmproxy” profile may have a different key. Reuse a working local store with `server.py start --ca-dir "/path/to/old/private/mitmproxy"` (saved for future starts). Enable **full trust** under **General → About → Certificate Trust Settings**. Installing the profile alone is insufficient.
 6. Fully close and reopen the game. For a bridged import on its original installation, try entering the title screen normally.
 7. If normal login does not work, or for a fresh account, use **title Menu → データ連携 → 連携パスワード入力**. Enter the linking ID/password from `private/linking-credentials.txt`. These are **local credentials, not your official linking password or Apple ID**. Check the displayed account name. Linking replaces the account selection on the receiving device; preserve any existing account you want to keep first.
 8. Test **home → solo play → results → app restart**, checking that progress persists.
@@ -85,10 +89,10 @@ Keep the computer awake and terminal open. To stop: **turn WireGuard off, then p
 | Area | Status |
 |---|---|
 | Solo gameplay and saved results | Device-confirmed on the existing development iPad |
-| Purchases, upgrades, rewards, progression, customization | 29 implemented/repaired feature groups; see [CHANGELOG](CHANGELOG.md) for individual evidence |
+| Purchases, upgrades, rewards, progression, customization | 30 implemented/repaired feature groups; see [CHANGELOG](CHANGELOG.md) for individual evidence |
 | Final-service Anthology/performance end dates | Relevant end dates extended in the served master; original retained |
 | Scoring, lessons, usage limits | Some values are approximations or generous preservation policies, not exact official parity |
-| Fresh accounts | Creation/API validation supported; actual device onboarding remains unverified |
+| Fresh accounts | Tutorial/home and reroll draw/retry/confirmation device-confirmed; full Docker/Windows setup unverified |
 | Multiplayer, circles, Theater League | Unsupported/incomplete; captured traffic is not a working implementation |
 | Unlock-all / complete no-limits mode | Not included in this release |
 | Client 3.0.0 / new app installation | Compatibility not guaranteed; a newly installed 3.0.0 client did not reach home in our test |
@@ -110,4 +114,26 @@ Backend: [server-of-dreams](https://github.com/UnknownSekai/server-of-dreams), p
 
 Server extensions are GPL-3.0. Exporter-derived code retains its MIT notice. See [THIRD_PARTY.md](THIRD_PARTY.md). This community project is unaffiliated with the game's operators or rights holders.
 
-Run the self-contained tests with `uv run --locked python -m unittest discover -s tests -v` (24 tests). `tests/check_running.py` additionally checks a running local test installation on port 8125 and reads its private linking credentials without printing them. Do not run it against someone else's server.
+Run the self-contained tests with `uv run --locked python -m unittest discover -s tests -v` (28 tests). `tests/check_running.py` additionally checks a running local test installation on port 8125 and reads its private linking credentials without printing them. Do not run it against someone else's server.
+
+### Certificate identity and reuse
+
+Each installation normally keeps its CA in `private/mitmproxy`. Preserve this
+directory across upgrades. The setup page shows the active certificate name and
+SHA-256 fingerprint: installing or trusting another certificate also named
+“mitmproxy” is not equivalent.
+
+If a previous local installation already works on your device, reuse its CA:
+
+```sh
+uv run --locked python server.py start --ca-dir "/absolute/path/to/previous/private/mitmproxy"
+```
+
+The directory choice is remembered for later starts. Keep it available locally;
+never upload or distribute its private keys. Fresh stores receive a distinct
+`Yumesute Local …` name. Existing certificates are never silently replaced.
+Enable full trust for the exact certificate shown in setup, then fully restart
+the game. If login works but gacha hangs, check terminal TLS errors and certificate
+identity before clearing game data. Reusing the working CA resolved this symptom
+in our device test; the game's internal certificate-validation behavior remains
+unconfirmed.

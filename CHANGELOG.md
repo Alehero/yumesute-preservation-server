@@ -303,3 +303,41 @@ replays and the separate iPhone v3 experiment are not active in this release.
 - Gameplay inventory remains **29 groups** on pinned UnknownSekai/server-of-dreams
   3cfca23267fb0f79d7336732db768e1510f20313; this updates setup policy and verifies existing
   story-reward behavior rather than adding a new gameplay group.
+
+
+## September 30, 2026 — reroll gacha and iOS setup
+
+Implemented/tested:
+- Persistent reroll sessions: spend the initial ticket once, preview without granting
+  rewards, replace the preview on reroll, retrieve it after reconnect, and grant once
+  on confirmation. Concurrent/repeated confirmation is idempotent. The real client
+  route is `/api/Gachas/ReRoll`; the inferred legacy name remains an alias.
+- Approximate reroll odds with at least one Rare4 for the supported guaranteed banners.
+- Stable CA reuse with `start --ca-dir`, remembered between starts; unique names for
+  newly generated certificates; active name/fingerprint in bilingual setup;
+  signing-key/download-certificate validation and game TLS failure diagnostics.
+- English/Japanese rollback guides linked from Quick start, with in-place Mac/iOS
+  installation steps, account linking, asset download, and backup limitations.
+- Four certificate tests, three routing tests, and disposable-database reroll
+  integration checks pass.
+
+Device-confirmed:
+- Apple-authorized 2.31.3.425 IPA installed over 3.0.0.432 on iPhone 14 Pro/iOS 26.6,
+  without uninstall, decryption or re-signing; local asset download/home/song entry.
+- Fresh Player onboarding and gacha initial draw → reroll → confirmation.
+- Two draw attempts consume one ticket; final confirmation saves ten pull-history
+  entries and confirmed state in PostgreSQL.
+- Reusing the previously working CA resolves gacha-screen loading on the test phone.
+  Different CA keys had the same displayed mitmproxy name; the client's exact
+  certificate-validation failure mechanism remains unconfirmed.
+
+Limits: new unique-name certificate onboarding on a separate device, Windows
+rollback, full Docker setup, and final reroll ownership after a device restart
+remain unverified. Rates are approximations. A development ticket grant was used;
+this release does not silently grant every fresh account extra reroll tickets.
+Multiplayer/circles/Theater League remain incomplete. No-limits mode is still planned.
+
+Feature-group inventory: **30** (the preceding 29 groups plus persistent reroll
+sessions). Certificate and documentation fixes do not add gameplay groups.
+Backend credit: UnknownSekai/server-of-dreams, pinned
+`3cfca23267fb0f79d7336732db768e1510f20313`; no upstream migration in this release.

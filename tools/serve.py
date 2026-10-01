@@ -76,6 +76,8 @@ async def no_accidental_registration(request:Request):
     return respond(AccountRegistResult(token='',error_type=1))
 
 app.router.routes[0:0]=router.routes
+from reroll import install as install_reroll
+install_reroll(app)
 
 @app.middleware('http')
 async def local_files(request,call_next):
