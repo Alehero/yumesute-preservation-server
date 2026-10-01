@@ -11,6 +11,34 @@ pinned to `3cfca23267fb0f79d7336732db768e1510f20313`.
 [TeamOpenSirius/OpenSiriusServer](https://github.com/TeamOpenSirius/OpenSiriusServer)
 was an independent protocol reference, not a second backend merged into this release.
 
+## October 1, 2026 — Recover official accounts directly at login
+
+- Unknown official login tokens or transfer ID/password pairs can now retrieve the
+  official account snapshot and save it locally, without a separate exporter.
+  Recognized local credentials always use the local save before any official request.
+- Imports and credential mappings commit together. Interrupted imports roll back;
+  retries and additional verified credentials never overwrite existing local progress.
+- Incorrect credentials return an error. Before any official recovery, an unavailable
+  official service selects the existing starter without resetting it. After recovery,
+  an unknown credential during an outage returns an error instead of changing accounts.
+  Unknown faults and malformed data never trigger the starter fallback.
+- **Live API-tested:** both official-token and transfer-password recovery retrieved a
+  2,590-record snapshot after EOS. This is account state, not downloadable game media.
+- **Server-tested:** concurrent retries, transaction rollback, invalid credentials,
+  outages, malformed replies, service restart and real transfer/auth/data routes.
+  A simulated total EOS forbids official calls for known accounts and verifies that
+  local progression survives. The existing 34-test suite and running-server checks pass.
+- **Device confirmation pending:** the integrated automatic-import flow is ready for
+  testing. Earlier official transfer/login captures establish protocol evidence only;
+  they do not certify this new end-to-end flow.
+- Recovery is enabled by default and configurable with `official_account_recovery`.
+  One official identity is supported per personal installation, alongside its retained
+  starter. Apple sign-in recovery is not implemented. Official availability is needed
+  only for initial retrieval; preserve the database, secrets, app and media afterward.
+  No guarantee of permanent official access or exact gameplay parity is implied.
+- Updated Japanese/English setup and backup notes. The gameplay inventory remains
+  **30 groups**; account recovery is supporting infrastructure.
+
 ## October 1, 2026 — Starter accounts and difficulty unlocks
 
 ### Start playing without an account import
@@ -214,5 +242,5 @@ it does not mean every group was wholly absent upstream or is fully verified.
 | 14 | Auditions (scoring incomplete) | 29 | Theater/MV viewing records |
 | 15 | Photo development/storage (rarity provisional) | 30 | Persistent reroll sessions (approximate odds) |
 
-Account export/import, client compatibility, asset preservation, downloader tooling
+Account export/import and automatic recovery, client compatibility, asset preservation, downloader tooling
 and documentation support these features and are not additional gameplay groups.

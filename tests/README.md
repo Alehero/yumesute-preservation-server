@@ -10,3 +10,17 @@ real PostgreSQL. It intentionally mutates the test account and requires the data
 `yumesute_release_rewards`. Start with a newly created fresh account and default allowance.
 It refuses other database names. It tests handlers, serialized responses and persisted
 balances; it is not an iPad playback test. Do not use an account you want to keep.
+
+`check_recovery_transport.py --snapshot /private/user-data.response.bin` tests the
+recovery HTTP protocol through MockTransport, including rejection, EOS, malformed
+responses, redirects and timeouts. It never contacts the official server.
+
+`check_official_recovery.py --snapshot /private/user-data.response.bin` requires a
+prepared installation and an **empty schema** in the disposable PostgreSQL database
+`yumesute_recovery_checks`. It refuses a populated database. It imports a real private
+fixture, injects a transaction failure, tests concurrent retries, and simulates total
+EOS with an official stub that fails if called for known local credentials. It checks
+service restart, preserved local progress, and actual transfer/auth/data HTTP routes.
+It intentionally changes disposable data. Keep the fixture private; never use a live
+save database for this test. Run both scripts from a prepared installation with the
+normal dependencies available.

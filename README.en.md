@@ -9,7 +9,7 @@ An unofficial local server for preserved **World Dai Star: Yume no Stellarium** 
 - Reference device: existing **iOS 2.31.3 client (build 2.31.3.425)**, M1 iPad Pro, iPadOS 26.6.1, macOS 26.2.
 - **Compatibility with 3.0.0 is not guaranteed.** Use 2.31.3; see the [rollback guide](IOS-ROLLBACK.en.md) for installation and compatibility details. Do not delete or update a working older client.
 - Home, solo play, results surviving restart, and several progression features were device-confirmed in the development setup. This is distinct from device-testing the entire release installer.
-- This is an early **one-account-per-installation, home-LAN** package, not a public multi-user hosting service. Windows instructions are provided but are not device-tested.
+- This is an early **personal, home-LAN** package, not a public multi-user hosting service. Each installation supports one recovered official identity alongside its retained starter save. Windows instructions are provided but are not device-tested.
 
 ## Requirements
 
@@ -18,7 +18,7 @@ An unofficial local server for preserved **World Dai Star: Yume no Stellarium** 
 3. [uv](https://docs.astral.sh/uv/getting-started/installation/), [Git](https://git-scm.com/downloads), and running [Docker Desktop](https://docs.docker.com/desktop/) for PostgreSQL. Existing PostgreSQL users can follow [DATA.md](DATA.md).
 4. The official [WireGuard app](https://www.wireguard.com/install/) on the device.
 5. A local game-data folder arranged as described in [DATA.md](DATA.md). **It is not included in an account-export ZIP.** You can try the official-CDN downloader below while those files remain available. Having media cached on an iPad does not automatically make it exportable to the PC.
-6. For import only: your own ZIP from the [account exporter](https://github.com/Alehero/yumesute-account-exporter). The exporter cannot fetch a new account from an offline official server.
+6. Optional: an existing account-export ZIP, or your official linking ID/password. Automatic recovery can retrieve your save while the official authentication and account-data endpoints remain available; an exporter is not required for that path.
 
 ## Quick start
 
@@ -46,7 +46,7 @@ If you already have local game data, skip downloading and use `uv run --locked p
 
 ### 2. Restore a saved account (optional)
 
-**Starting fresh? Skip this step.** The server creates your starter save automatically when first started. New saves begin at the opening tutorial; the registration request saves the name entered in game.
+**Starting fresh or trying automatic official recovery? Skip this step.** The server creates your starter save automatically when first started. New saves begin at the opening tutorial; the registration request saves the name entered in game.
 
 All local accounts, including imports, receive a **permanent gift of 10,000 song tickets (歌劇目録)**. Claim **楽曲解放サポート** from Presents; it is available once per account with no expiry. Set `preservation_song_tickets` in `preservation-rules.json` before the gift is issued to change the amount (0 disables new issuance). Earlier direct starter grants are retained, so those accounts can also claim this gift. This is a local preservation reward, not an official event or unlock-all preset; song and chart unlock conditions still apply.
 
@@ -71,9 +71,13 @@ A setup page opens in your browser. If it does not, open `private/setup.html`.
 3. Open the displayed certificate URL in device Safari.
 4. Install the downloaded profile under **Settings → General → VPN & Device Management**.
 5. Match the certificate name/fingerprint shown in setup; another “mitmproxy” profile may have a different key. Reuse a working local store with `server.py start --ca-dir "/path/to/old/private/mitmproxy"` (saved for future starts). Enable **full trust** under **General → About → Certificate Trust Settings**. Installing the profile alone is insufficient.
-6. Fully close and reopen the game. For a bridged import on its original installation, try entering the title screen normally.
-7. A clean client registering or logging in with no token automatically selects the local starter save. This installation has **one shared save**, not one per device; registration reuses it without resetting progress. Imported saves never use this automatic path. Automatic entry is API-tested; clean-client device confirmation is pending. If the client has an old/foreign token or automatic entry does not work, use **title Menu → データ連携 → 連携パスワード入力**. Enter the linking ID/password from `private/linking-credentials.txt`. These are **local credentials, not your official linking password or Apple ID**. Check the displayed account name. Linking replaces the account selection on the receiving device; preserve any existing account you want to keep first.
+6. Fully close and reopen the game and enter from the title screen. Known local accounts load locally. An unrecognized official login token triggers an attempt to recover your official save.
+7. To recover using official credentials, choose **title Menu → データ連携 → 連携パスワード入力** and enter your **official linking ID and password**. Check the displayed account name. To select this installation's original starter or manually imported save instead, use the **local** credentials in `private/linking-credentials.txt`. Apple sign-in recovery is not implemented. Linking changes the account selected on the receiving device.
 8. Test **home → solo play → results → app restart**, checking that progress persists.
+
+**Recovery behavior:** a successful official fetch is saved transactionally; future logins with recognized credentials use the local copy without contacting the official server. Incorrect credentials return an error. If the official service is unavailable before any official save has been recovered, the server selects its existing starter without resetting it; that credential then stays linked locally. After recovery, an unknown credential during an outage returns an error rather than selecting a starter. Malformed responses and unrecognized errors never cause fallback. Set `official_account_recovery` to `false` in `preservation-rules.json` to disable official requests; known local accounts still work. See [recovery and backups](DATA.md#automatic-account-recovery--アカウントの自動復元).
+
+A clean client with no token uses the local starter. Registration reuses that save without resetting progress; it does not create a separate save per device. API checks cover registration, but clean-client name entry remains unverified. Official recovery retrieves account state, not the app or media. Its initial availability is not guaranteed; back up the recovered database and configuration.
 
 Keep the computer awake and terminal open. To stop: **turn WireGuard off, then press Control+C**. Stop PostgreSQL with `docker compose stop`. Next time, run `docker compose up -d --wait db` and `server.py start`. Do not re-import your account each session.
 

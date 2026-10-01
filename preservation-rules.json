@@ -6,5 +6,6 @@
   "lesson_rank_xp": 1500,
   "rank_xp_per_stamina": 4.5,
   "fresh_song_tickets": 0,
-  "preservation_song_tickets": 10000
+  "preservation_song_tickets": 10000,
+  "official_account_recovery": true
 }

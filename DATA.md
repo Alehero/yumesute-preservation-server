@@ -105,3 +105,49 @@ Restore first into a separate installation/database, using the same source revis
 Release checks use disposable databases: exporter ZIP validation/import, fresh starter creation, wrong-password rejection, linking/authentication, account-data serialization, master serving and missing-asset behavior. Automated success does not certify fresh-client onboarding or every gameplay feature. Docker Compose and Windows are documented paths; this Mac's validation uses an existing local PostgreSQL 17 instance. See CHANGELOG for final results.
 
 配布用の検証では専用の使い捨てDBを使用します。ZIP検証・インポート、新規初期データ作成、誤パスワードの拒否、連携・認証、アカウントデータ、マスター配信、素材不足時の動作を確認します。自動テスト成功は新規端末の導入や全機能の実機動作を保証しません。このMacでは既存のPostgreSQL 17を利用して検証しており、Docker ComposeおよびWindowsの手順自体は未検証です。結果はCHANGELOGに記録します。
+
+## Automatic account recovery / アカウントの自動復元
+
+Known local tokens and transfer credentials are resolved before any official request.
+For an unknown official identity, recovery uses HTTPS transfer/authentication and
+`GET /api/data/user`; it does not call the official login-reward endpoint. Local
+credentials are never forwarded when their linking ID matches the configured local ID.
+Unknown official credentials are sent only to the fixed official API host; redirects
+are refused. Passwords and login tokens are represented locally by keyed digests,
+not stored in plaintext by this feature. Separate diagnostic traffic captures may
+contain credentials; keep any such captures private.
+
+Imports, the raw snapshot, its compatibility baseline and credential mappings commit
+in one PostgreSQL transaction. Failure rolls everything back. Recovering an identity
+already stored locally adds credential mappings without replacing its progress.
+The preview supports one recovered official identity per installation, alongside the
+original starter; it is not a general multi-account hosting service. An outage before
+recovery binds the attempted credential to the existing starter permanently. Unknown
+credentials after recovery fail during outages, preserving account selection.
+
+Timeouts, network unavailability, HTTP 5xx and recognized explicit service-closure
+faults allow the pre-recovery starter fallback. Incorrect credentials, unknown faults,
+HTTP 4xx, redirects and malformed account data do not. Future official EOS responses
+may differ; unknown responses deliberately fail without creating or replacing a save.
+Set `official_account_recovery` to `false` to stop official requests. Existing local
+mappings remain usable. This option does not disable initial game-data downloads.
+
+A normal database dump includes `preservation_recovery` and
+`preservation_credentials`. Preserve the configuration's `jwt_secret` as well: it
+signs local tokens and keys credential digests. Keep `private/account.json`, local
+linking credentials and the other files listed in the backup section. Do not rotate
+secrets casually or publish snapshots/database dumps. Media and filesystem photos
+still need their own backups. The initial official retrieval is an availability
+window, not a promise of permanent official access.
+
+登録済みのアカウントは公式へ問い合わせず、ローカルから読み込みます。未登録の場合のみ
+公式の連携・認証・アカウント取得APIを使用し、ログイン報酬のAPIは呼びません。
+復元データ・元の応答・連携情報の対応付けはDBにまとめて保存し、途中で失敗した場合は
+全体を取り消します。同じ公式アカウントを再取得しても、ローカルで進めた状態を上書きしません。
+公式アカウントは1環境につき1件で、元の初期セーブも残します。復元前の接続不能時に
+初期セーブへ紐付けた連携情報は、以後もローカルを優先します。
+
+連携情報は秘密鍵付きのハッシュとして保存します。この機能はパスワードやトークンを
+平文で保存しませんが、別途行う通信記録には含まれる場合があります。
+DBのバックアップに加えて `jwt_secret` を含む設定と `private/` も保管してください。
+初回の公式データ取得は配信状況に依存し、将来の取得を保証するものではありません。
