@@ -366,3 +366,26 @@ Feature inventory remains **30**: this improves existing fresh-account onboardin
 not a separate gameplay group. Pinned backend: UnknownSekai/server-of-dreams
 `3cfca23267fb0f79d7336732db768e1510f20313`. Existing scoring/lesson approximations
 and incomplete multiplayer/circles/Theater League are unchanged.
+
+
+## October 1, 2026 — in-game starter naming and simpler setup
+
+Implemented/tested:
+- Removed the fresh-account command from both README quick starts; only importing
+  an existing account is an optional step. Moved phone rollback test context out
+  of the README and kept the detailed evidence in the rollback guides.
+- Newly created fresh accounts accept the name from the client's Register payload
+  once, transactionally. Retrying registration cannot rename a save. Existing
+  configured saves and imports do not opt into this behavior.
+- Upstream starter data already uses tutorialStatus=Start (0); no tutorial skip
+  was added. The one-time, configurable 10,000 song-ticket inventory allowance
+  remains unchanged. No gift event was introduced.
+- 34 unit tests pass. Disposable PostgreSQL integration confirms Japanese-name
+  persistence, retry safety, tutorial start state, and imported-account rejection.
+- Deployed to the local test server. Complete opening story/name-popup sequence
+  remains device-unverified; the client must have its opening-scene assets.
+
+Captured-only: no new official captures. Feature inventory remains **30**, based
+ on pinned UnknownSekai/server-of-dreams
+`3cfca23267fb0f79d7336732db768e1510f20313`. Existing scoring/lesson approximations
+and incomplete multiplayer/circles/Theater League remain documented limitations.

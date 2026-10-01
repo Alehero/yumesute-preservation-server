@@ -15,6 +15,8 @@ class StarterLoginTests(unittest.IsolatedAsyncioTestCase):
         self.conn.execute = AsyncMock()
         context = AsyncMock()
         context.__aenter__.return_value = self.conn
+        self.conn.transaction.return_value = AsyncMock()
+        self.conn.conn = Mock(execute=AsyncMock(), fetchval=AsyncMock(return_value=7))
         self.app = Mock()
         self.app.acquire_db.return_value = context
         self.state = {'mode': 'fresh', 'user_id': 7}
@@ -34,6 +36,18 @@ class StarterLoginTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual((result.token, result.error_type), ('register:7', 0))
         self.assertEqual(self.conn.execute.await_count, 2)
         self.conn.execute.assert_awaited_with((7, 'register:7'))
+
+    async def test_name_claimed_once_only_for_new_accounts(self):
+        state = dict(self.state, accept_registration_name=True)
+        self.conn.conn.fetchval.side_effect = [7, None]
+        await self.module.register_starter(self.app, state, 'ことな')
+        await self.module.register_starter(self.app, state, 'Retry')
+        updates = [c for c in self.conn.conn.execute.call_args_list if c.args[0].startswith('UPDATE')]
+        self.assertEqual(len(updates), 1)
+        self.assertEqual(updates[0].args[1:], (7, 'ことな'))
+        self.conn.conn.execute.reset_mock()
+        await self.module.register_starter(self.app, self.state, 'Existing save')
+        self.conn.conn.execute.assert_not_awaited()
 
     async def test_import_never_auto_selected(self):
         state = dict(self.state, mode='import')

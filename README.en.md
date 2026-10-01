@@ -7,7 +7,7 @@ An unofficial local server for preserved **World Dai Star: Yume no Stellarium** 
 **Read first: this does not restore the official service or provide the game app. An account ZIP alone is not enough.** You need a compatible installed client, master data, and the media needed by that client. This repository does not distribute an IPA/APK, game media, or anyone's account.
 
 - Reference device: existing **iOS 2.31.3 client (build 2.31.3.425)**, M1 iPad Pro, iPadOS 26.6.1, macOS 26.2.
-- **Compatibility with 3.0.0 is not guaranteed.** In our test of a newly installed 3.0.0 client, the game continued to show the end-of-service notice after account linking and did not reach home. Do not delete or update a working older client.
+- **Compatibility with 3.0.0 is not guaranteed.** Use 2.31.3; see the [rollback guide](IOS-ROLLBACK.en.md) for installation and compatibility details. Do not delete or update a working older client.
 - Home, solo play, results surviving restart, and several progression features were device-confirmed in the development setup. This is distinct from device-testing the entire release installer.
 - This is an early **one-account-per-installation, home-LAN** package, not a public multi-user hosting service. Windows instructions are provided but are not device-tested.
 
@@ -44,25 +44,19 @@ The downloader does not need an official game login. It fetches master data, iOS
 
 If you already have local game data, skip downloading and use `uv run --locked python server.py prepare --data-dir "/path/to/game-data"`, then start the database. A Windows path can be `"C:\Users\You\Documents\game-data"`. Preparation generates per-installation secrets and copies supplied files without changing the originals.
 
-### 2A. Import a saved account
+### 2. Restore a saved account (optional)
+
+**Starting fresh? Skip this step.** The server creates your starter save automatically when first started. New saves begin at the opening tutorial; the registration request saves the name entered in game.
+
+New accounts receive **10,000 song tickets (歌劇目録)** directly in inventory, once. You can change `fresh_song_tickets` in `preservation-rules.json` before first startup (0 disables it). This is a preservation allowance, not an official reward or unlock-all preset. Song and chart unlock conditions still apply.
+
+To restore an account export instead, run this **before the first server start**:
 
 ```sh
 uv run --locked python server.py import-account "/path/to/your-account.zip"
 ```
 
-The importer validates checksums, format, and account identity. It refuses to overwrite an existing account or a nonempty database. Unsupported entity types stop import instead of silently dropping records. **Keep your original ZIP.**
-
-If the export includes a login association (“bridge”), the same app installation should be able to log in normally. Without a bridge, or on another device, use Data Link below. Import preserves captured ownership; it does not grant everything.
-
-### 2B. Create a fresh account
-
-For a new local Player, you can skip account creation: `server.py start` creates the starter save automatically when no account is configured. Import your export **before starting** if you want to restore it instead. To choose a name in an empty installation:
-
-```sh
-uv run --locked python server.py fresh-account --name "Player"
-```
-
-This creates an independent local account using upstream starter data, plus **10,000 song tickets (歌劇目録, item 130001)** directly in inventory. This generous preservation allowance is configurable with `fresh_song_tickets` in `preservation-rules.json` before account creation (0 disables it). It applies once to fresh accounts only; imported accounts retain their captured resources. Songs still have their normal purchase/story/chart conditions. **It is not an unlock-all preset**, nor a recovery of your official account. Fresh-account tutorial/home onboarding and initial draw → reroll → confirmation are device-confirmed on the downgraded iPhone. Reroll odds are approximations; confirm persistence after restarting on your own device. A compatible client and game media are still required.
+Import preserves captured ownership and refuses to overwrite existing accounts. **Keep the original ZIP.** If your export includes a login bridge, try normal login on the original installation; otherwise use Data Link below.
 
 ### 3. Start and connect the device
 
@@ -87,14 +81,14 @@ Keep the computer awake and terminal open. To stop: **turn WireGuard off, then p
 
 | Area | Status |
 |---|---|
-| Solo gameplay and saved results | Device-confirmed on the existing development iPad |
+| Solo gameplay and saved results | Supported; see CHANGELOG for validation details |
 | Purchases, upgrades, rewards, progression, customization | 30 implemented/repaired feature groups; see [CHANGELOG](CHANGELOG.md) for individual evidence |
 | Final-service Anthology/performance end dates | Relevant end dates extended in the served master; original retained |
 | Scoring, lessons, usage limits | Some values are approximations or generous preservation policies, not exact official parity |
-| Fresh accounts | Tutorial/home and reroll draw/retry/confirmation device-confirmed; full Docker/Windows setup unverified |
+| Fresh accounts | Automatic creation and initial name saving supported; full opening sequence awaits device verification |
 | Multiplayer, circles, Theater League | Unsupported/incomplete; captured traffic is not a working implementation |
 | Unlock-all / complete no-limits mode | Not included in this release |
-| Client 3.0.0 / new app installation | Compatibility not guaranteed; a newly installed 3.0.0 client did not reach home in our test |
+| Client 3.0.0 / new app installation | Use 2.31.3; see the rollback guide for compatibility details |
 
 ## Troubleshooting
 
@@ -102,7 +96,7 @@ Keep the computer awake and terminal open. To stop: **turn WireGuard off, then p
 - **Port conflict:** defaults are backend TCP 8125 (loopback), WireGuard UDP 51822, certificate TCP 8766, and PostgreSQL TCP 55433 (loopback). Use `start --port 8126 --wg-port 51823 --cert-port 8767`. Change DB port in both `.env` and `vendor/server-of-dreams/config.yml` before initialization.
 - **Certificate/tunnel failure:** check same LAN, guest-network isolation, computer firewall, and full certificate trust. Allow only the required traffic on your home network. Internet port forwarding is unnecessary.
 - **Missing images/songs or HTTP 404:** check `doctor` and `logs/backend.log`. Rerun the downloader for covered files, then copy recovered files into the matching server paths in DATA.md. Do not rerun prepare after configuring an account; it intentionally refuses that. Other missing media must be supplied locally. File counts are not proof of completeness. Do not clear the app cache to troubleshoot this.
-- **EOS after linking on 3.0.0:** this also occurred in our test of a newly installed client. Repeating the transfer and restarting did not resolve it; we do not yet have a verified fix.
+- **EOS after linking on 3.0.0:** use the compatible client version described in the [rollback guide](IOS-ROLLBACK.en.md).
 - **Database connection failure:** check Docker Desktop and `docker compose ps`. Changing `.env` does not change a password inside an existing database volume. Do not casually delete the volume.
 
 See [DATA.md](DATA.md) for backups, data layout, and existing PostgreSQL. Issues in Japanese or English are welcome. Include OS/client versions, the failing step, and a sanitized error. **Do not upload account ZIPs, private folders, QR codes, or linking credentials.**
@@ -113,7 +107,7 @@ Backend: [server-of-dreams](https://github.com/UnknownSekai/server-of-dreams), p
 
 Server extensions are GPL-3.0. Exporter-derived code retains its MIT notice. See [THIRD_PARTY.md](THIRD_PARTY.md). This community project is unaffiliated with the game's operators or rights holders.
 
-Run the self-contained tests with `uv run --locked python -m unittest discover -s tests -v` (33 tests). `tests/check_running.py` additionally checks a running local test installation on port 8125 and reads its private linking credentials without printing them. Do not run it against someone else's server.
+Run the self-contained tests with `uv run --locked python -m unittest discover -s tests -v` (34 tests). `tests/check_running.py` additionally checks a running local test installation on port 8125 and reads its private linking credentials without printing them. Do not run it against someone else's server.
 
 ### Certificate identity and reuse
 

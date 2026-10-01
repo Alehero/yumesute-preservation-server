@@ -128,6 +128,7 @@ async def account(a):
                 await conn.execute(add_hash_user_id(hash_id(uid),uid))
         restored=await user_data(app,uid)
         state,credentials=transfer_config(uid,'import' if raw else 'fresh',bridge)
+        if raw is None: state['accept_registration_name'] = True
         if raw:
             p=PRIVATE/'account-snapshot/user-data.response.bin';p.parent.mkdir(exist_ok=True);p.write_bytes(raw);p.chmod(0o600)
             write(PRIVATE/'imported-user-roundtrip.json',json.dumps(to_json(restored)))

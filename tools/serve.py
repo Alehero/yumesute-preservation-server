@@ -75,7 +75,9 @@ async def transfer(request:Request):
 @router.post('/api/Account/Register')
 async def register_local_starter(request:Request):
     # Reuse this installation's fresh save; never reset it or expose an import.
-    return respond(await register_starter(request.app, ACCOUNT))
+    from models import RegisterPayload
+    payload = await read_request(request, RegisterPayload)
+    return respond(await register_starter(request.app, ACCOUNT, getattr(payload, 'name', None)))
 
 app.router.routes[0:0]=router.routes
 from reroll import install as install_reroll
