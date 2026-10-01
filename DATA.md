@@ -74,9 +74,9 @@ Run `prepare`, then edit **only this release folder's** `vendor/server-of-dreams
 
 ## Fresh-account resources and story rewards / 新規リソースとシナリオ報酬
 
-Fresh creation starts with the pinned upstream seed: 21 starter actors, zero directly held coins/jewels, and 36 unclaimed inbox entries. This release adds 10,000 歌劇目録 directly to item inventory once during fresh account creation. Inbox rewards are separate and must be claimed. This is a configurable preservation policy, not a reconstruction of official starting balances. Imports receive no extra allowance. The current song exchange consumes 10 tickets; chart exchange consumes 1, subject to existing unlock conditions.
+Fresh creation retains the upstream starter seed. The default direct allowance (`fresh_song_tickets`) is now 0. Both fresh and imported accounts receive the permanent **楽曲解放サポート** inbox gift: 10,000 歌劇目録, once per account, without expiry. `preservation_song_tickets` configures new issuance; changing it does not rewrite an existing gift. Previously granted inventory is retained, and those accounts are eligible too. The issuance ledger survives claimed-inbox cleanup. Claiming is transactional and repeated/concurrent claims do not duplicate rewards. This is a local preservation policy, not an official event. Song exchange costs 10 tickets and chart exchange costs 1, subject to unlock conditions.
 
-新規作成は固定版上流の初期データ（アクター21体、直接所持するコイン・ジュエル0、未受取プレゼント36件）を使い、保存用の設定として歌劇目録10,000個を作成時に1回だけ追加します。プレゼントの報酬は別途受取が必要です。公式の初期所持数を再現したものではありません。インポートには追加しません。現在の楽曲交換は10個、譜面交換は1個を消費し、既存の解放条件も適用されます。
+新規・インポート済みアカウントの両方に「楽曲解放サポート」（歌劇目録10,000個）を1回、期限なしで付与します。受取操作が必要です。初期所持への直接付与は既定で0になりました。既に受け取った初期所持分は減らしません。数量設定は新規付与にのみ反映し、受取済みプレゼントを整理しても再発行しません。公式イベントではなく保存用の設定です。
 
 Story read rewards are implemented from master reward packages. Backend/database checks confirm first-read rewards, the main-story full-read bonus, reading fully after skipping, and no repeated grants. Locked card side stories are rejected; an unlocked side story grants its read reward once and updates character reading progress. For the tested main episode 1010101, read/skip grants 50 free jewels, 1 歌劇目録 and 30 pieces of item 141001; full reading grants one additional 歌劇目録. These examples are not universal rewards for every story. Chapter-completion reward parity and all story categories are not certified by these checks. No new device playback test was performed.
 
@@ -105,3 +105,49 @@ Restore first into a separate installation/database, using the same source revis
 Release checks use disposable databases: exporter ZIP validation/import, fresh starter creation, wrong-password rejection, linking/authentication, account-data serialization, master serving and missing-asset behavior. Automated success does not certify fresh-client onboarding or every gameplay feature. Docker Compose and Windows are documented paths; this Mac's validation uses an existing local PostgreSQL 17 instance. See CHANGELOG for final results.
 
 配布用の検証では専用の使い捨てDBを使用します。ZIP検証・インポート、新規初期データ作成、誤パスワードの拒否、連携・認証、アカウントデータ、マスター配信、素材不足時の動作を確認します。自動テスト成功は新規端末の導入や全機能の実機動作を保証しません。このMacでは既存のPostgreSQL 17を利用して検証しており、Docker ComposeおよびWindowsの手順自体は未検証です。結果はCHANGELOGに記録します。
+
+## Automatic account recovery / アカウントの自動復元
+
+Known local tokens and transfer credentials are resolved before any official request.
+For an unknown official identity, recovery uses HTTPS transfer/authentication and
+`GET /api/data/user`; it does not call the official login-reward endpoint. Local
+credentials are never forwarded when their linking ID matches the configured local ID.
+Unknown official credentials are sent only to the fixed official API host; redirects
+are refused. Passwords and login tokens are represented locally by keyed digests,
+not stored in plaintext by this feature. Separate diagnostic traffic captures may
+contain credentials; keep any such captures private.
+
+Imports, the raw snapshot, its compatibility baseline and credential mappings commit
+in one PostgreSQL transaction. Failure rolls everything back. Recovering an identity
+already stored locally adds credential mappings without replacing its progress.
+The preview supports one recovered official identity per installation, alongside the
+original starter; it is not a general multi-account hosting service. An outage before
+recovery binds the attempted credential to the existing starter permanently. Unknown
+credentials after recovery fail during outages, preserving account selection.
+
+Timeouts, network unavailability, HTTP 5xx and recognized explicit service-closure
+faults allow the pre-recovery starter fallback. Incorrect credentials, unknown faults,
+HTTP 4xx, redirects and malformed account data do not. Future official EOS responses
+may differ; unknown responses deliberately fail without creating or replacing a save.
+Set `official_account_recovery` to `false` to stop official requests. Existing local
+mappings remain usable. This option does not disable initial game-data downloads.
+
+A normal database dump includes `preservation_recovery` and
+`preservation_credentials`. Preserve the configuration's `jwt_secret` as well: it
+signs local tokens and keys credential digests. Keep `private/account.json`, local
+linking credentials and the other files listed in the backup section. Do not rotate
+secrets casually or publish snapshots/database dumps. Media and filesystem photos
+still need their own backups. The initial official retrieval is an availability
+window, not a promise of permanent official access.
+
+登録済みのアカウントは公式へ問い合わせず、ローカルから読み込みます。未登録の場合のみ
+公式の連携・認証・アカウント取得APIを使用し、ログイン報酬のAPIは呼びません。
+復元データ・元の応答・連携情報の対応付けはDBにまとめて保存し、途中で失敗した場合は
+全体を取り消します。同じ公式アカウントを再取得しても、ローカルで進めた状態を上書きしません。
+公式アカウントは1環境につき1件で、元の初期セーブも残します。復元前の接続不能時に
+初期セーブへ紐付けた連携情報は、以後もローカルを優先します。
+
+連携情報は秘密鍵付きのハッシュとして保存します。この機能はパスワードやトークンを
+平文で保存しませんが、別途行う通信記録には含まれる場合があります。
+DBのバックアップに加えて `jwt_secret` を含む設定と `private/` も保管してください。
+初回の公式データ取得は配信状況に依存し、将来の取得を保証するものではありません。

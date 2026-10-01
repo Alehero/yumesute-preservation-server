@@ -122,12 +122,15 @@ async def account(a):
                 await conn.execute(add_hash_user_id(user['hashUserId'],uid))
             else:
                 await create_default_user_data(conn,uid,a.name)
+                from starter_music import grant_starter_music
+                await grant_starter_music(conn, uid)
                 if starter_tickets:
                     from helpers.things import grant_things_consolidated
                     await grant_things_consolidated(conn,uid,[(1,130001,starter_tickets)])
                 await conn.execute(add_hash_user_id(hash_id(uid),uid))
         restored=await user_data(app,uid)
         state,credentials=transfer_config(uid,'import' if raw else 'fresh',bridge)
+        if raw is None: state['accept_registration_name'] = True
         if raw:
             p=PRIVATE/'account-snapshot/user-data.response.bin';p.parent.mkdir(exist_ok=True);p.write_bytes(raw);p.chmod(0o600)
             write(PRIVATE/'imported-user-roundtrip.json',json.dumps(to_json(restored)))
@@ -161,7 +164,13 @@ def doctor(a):
         asyncio.run(check());print('OK      database account')
     if failed:raise RuntimeError('Setup incomplete; see README')
 
+def ensure_start_account():
+    if not (PRIVATE/'account.json').exists():
+        print('No account configured; creating a local Player starter save.')
+        asyncio.run(account(argparse.Namespace(command='fresh-account', name='Player')))
+
 def start(a):
+    ensure_start_account()
     doctor(a)
     env=dict(os.environ,YUMESUTE_PORT=str(a.port))
     logdir=ROOT/'logs';logdir.mkdir(exist_ok=True)
@@ -191,7 +200,7 @@ def main():
     p=sub.add_parser('import-account');p.add_argument('archive',type=Path)
     p=sub.add_parser('fresh-account');p.add_argument('--name',default='Player')
     sub.add_parser('doctor')
-    p=sub.add_parser('start');p.add_argument('--host');p.add_argument('--port',type=int,default=8125);p.add_argument('--wg-port',type=int,default=51822);p.add_argument('--cert-port',type=int,default=8766);p.add_argument('--no-browser',action='store_true')
+    p=sub.add_parser('start');p.add_argument('--ca-dir',help='Reuse an existing local mitmproxy CA directory; saved for future starts');p.add_argument('--host');p.add_argument('--port',type=int,default=8125);p.add_argument('--wg-port',type=int,default=51822);p.add_argument('--cert-port',type=int,default=8766);p.add_argument('--no-browser',action='store_true')
     a=parser.parse_args();PRIVATE.mkdir(exist_ok=True,mode=0o700)
     if a.command=='prepare':prepare(a)
     elif a.command in ('import-account','fresh-account'):asyncio.run(account(a))

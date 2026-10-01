@@ -1,305 +1,269 @@
-# Preservation server changelog
+# Changelog
 
-Based on UnknownSekai/server-of-dreams at 3cfca23267fb0f79d7336732db768e1510f20313.
-TeamOpenSirius/OpenSiriusServer at 536004f17e174e2190d247edad2622ca2133b181 is
-an independent protocol reference, not a merged backend. Changes live in tools/
-and are applied as overrides around the pinned Python backend.
+Player-facing changes to Yumesute Preservation Server, newest first.
+**Device-confirmed** means the described flow was checked in the game;
+**server-tested** means automated or database checks passed, without necessarily
+covering every client interaction. Captured or archived data alone does not mean
+that a feature is playable.
 
-## Counting convention
+Built on [UnknownSekai/server-of-dreams](https://github.com/UnknownSekai/server-of-dreams),
+pinned to `3cfca23267fb0f79d7336732db768e1510f20313`.
+[TeamOpenSirius/OpenSiriusServer](https://github.com/TeamOpenSirius/OpenSiriusServer)
+was an independent protocol reference, not a second backend merged into this release.
 
-Count distinct user-facing feature groups implemented or substantially repaired in
-our overrides. Do not count endpoints, bug fixes within the same feature, untouched
-upstream functionality, or captured-but-unimplemented APIs as additional features.
-This is a maintenance inventory, not a claim that all functionality was absent upstream.
+## October 1, 2026 — Recover accounts from the local setup page
 
-### Previously implemented: 17 gameplay groups
+- Added a Japanese/English recovery page on the server computer. Enter official
+  transfer credentials to download a verified account ZIP without changing any save.
+  The page explicitly retries the official service even when normal login is already
+  associated with a starter. Recovery errors never create a starter through this page.
+- Optional import is a separate, confirmed action after downloading. It retains the
+  starter and never overwrites progress for an official account already stored locally.
+  Verified credentials previously assigned by outage fallback can be reassigned to the
+  recovered save; ordinary login remains local-first.
+- Backups are also retained in `private/recovered-exports`. Import sessions expire
+  after 15 minutes or a server restart. The page accepts requests only on loopback
+  with same-origin checks; it is not a public credential-collection website.
+- **Server-tested:** ZIP validity, download without account mutation, credential and
+  outage failures, explicit fallback reassignment, retained local progress, single-use
+  import, and host/origin/request-token checks. The existing 34 tests also pass.
+- **Device-confirmed:** browser backup/import followed by game login restored the
+  account successfully. In-game transfer recovery into a clean local server is also
+  device-confirmed; normal login using an official token is being tested separately.
+  Official API availability and compatible app/media remain prerequisites.
+- Gameplay inventory remains **30 groups**. This extends account-preservation tooling
+  around the credited pinned upstream backend, not gameplay or multiplayer support.
 
-1. Song purchases.
-2. Olivier chart purchases.
-3. Actor experience/level upgrades.
-4. Actor sense upgrades.
-5. Actor talent upgrades.
-6. Accessory level upgrades.
-7. Poster level upgrades.
-8. Poster limit breaks.
-9. Actor side-story unlock/read/rewards.
-10. Poster story unlocking (some behavior remains provisional).
-11. Character star-rank reward claims.
-12. Mission reward claims and stage advancement.
-13. Anthology progression and first-clear rewards.
-14. Audition progression, phases and challenge skips (scoring parity incomplete).
-15. Photo development, film use and persistent local image storage (rarity provisional).
-16. Album layout persistence, including photos, themes, decorations and stamps.
-17. Photo character tags.
+## October 1, 2026 — Recover official accounts directly at login
 
-Device checks confirm the main progression/upgrade flows, mission claims, Anthology,
-ordinary auditions, and album saves. Tag and individual edge-case coverage also rely
-on captured-request tests; this list is not blanket device certification.
+- Unknown official login tokens or transfer ID/password pairs can now retrieve the
+  official account snapshot and save it locally, without a separate exporter.
+  Recognized local credentials always use the local save before any official request.
+- Imports and credential mappings commit together. Interrupted imports roll back;
+  retries and additional verified credentials never overwrite existing local progress.
+- Incorrect credentials return an error. Before any official recovery, an unavailable
+  official service selects the existing starter without resetting it. After recovery,
+  an unknown credential during an outage returns an error instead of changing accounts.
+  Unknown faults and malformed data never trigger the starter fallback.
+- **Live API-tested:** both official-token and transfer-password recovery retrieved a
+  2,590-record snapshot after EOS. This is account state, not downloadable game media.
+- **Server-tested:** concurrent retries, transaction rollback, invalid credentials,
+  outages, malformed replies, service restart and real transfer/auth/data routes.
+  A simulated total EOS forbids official calls for known accounts and verifies that
+  local progression survives. The existing 34-test suite and running-server checks pass.
+- **Device-confirmed:** entering official transfer credentials in game automatically
+  recovered the account into a clean local server and allowed play. Normal title login
+  using a retained official token remains pending a separate device check.
+- Recovery is enabled by default and configurable with `official_account_recovery`.
+  One official identity is supported per personal installation, alongside its retained
+  starter. Apple sign-in recovery is not implemented. Official availability is needed
+  only for initial retrieval; preserve the database, secrets, app and media afterward.
+  No guarantee of permanent official access or exact gameplay parity is implied.
+- Updated Japanese/English setup and backup notes. The gameplay inventory remains
+  **30 groups**; account recovery is supporting infrastructure.
 
-### Supporting preservation work (not included in gameplay count)
+## October 1, 2026 — Starter accounts and difficulty unlocks
 
-- Account import/authentication and compatibility fixes for the iPad client.
-- Capture/routing tooling and persistent local database deployment.
-- Public account exporter with Japanese and English documentation.
-- iOS asset/catalog, chart, script and media preservation and local serving.
-- Gacha response compatibility fixes; underlying gacha implementation is upstream.
-- Corrected imported vocal/concentration fields; full score equivalence unresolved.
+### Start playing without an account import
 
-## Customization/profile batch — September 28, 2026
+- A prepared server now creates a Player starter save automatically when no account
+  is configured. Existing accounts and nonempty databases are protected from overwrite.
+- Registration accepts a player name once. Repeating registration does not reset
+  progress, repeat starter grants, or rename an established account.
+- **Device-confirmed:** the opening story and tutorial-skip option appear on a
+  previously used installation. **Server-tested:** names submitted during registration
+  persist correctly. Name entry on a genuinely clean installation remains unverified.
+- Client inspection explains why resetting a server save does not necessarily show
+  name entry: the client skips registration when it already has a saved login token.
+  Tutorial progress and account registration are separate. Reinstalling or deleting
+  cached assets is not required for normal starter-account use.
 
-Seven additional groups (24 total): selected outfits; favorite outfits; favorite
-stamps; character-page portraits; home display customization; home background music;
-profile editing. Includes beginner mission progress for favoriting stamps, editing
-introductions and changing profile titles. Validation/deployment status below.
+### A permanent song-ticket gift
 
-Lessons remain pending and are not included in the count. Friend routes already
-exist upstream and are not claimed as new work. Comic/help assets are preservation
-work, not new gameplay APIs.
+- New and imported accounts receive a one-time, nonexpiring **「楽曲解放サポート」**
+  gift containing **10,000 歌劇目録**. The quantity is configurable through
+  `preservation_song_tickets`.
+- This replaces the earlier default grant directly into starter inventory. Earlier
+  grants are retained, and those accounts can also claim the gift. Song and chart
+  unlock requirements still apply; this is not an unlock-all mode or an official event.
+- Fixed an expiry-field compatibility issue that hid the gift, and an account-ID
+  size issue that prevented some imported accounts from loading.
+- **Device-confirmed:** gift display and claiming. **Server-tested:** duplicate and
+  concurrent claims, migration of hidden gifts, and prevention of reissuance after
+  inbox cleanup.
 
-Batch verification: 42 official captured requests matched in isolated database tests;
-duplicate favorite and invalid-card tests passed; seven gameplay regression tests passed.
-Deployed successfully; live private account loads 2,602 records, preserved images still
-serve correctly. iPad testing of these seven groups is pending. Routing remains official.
+### Prevent an empty song list after switching accounts
 
-Copy-ready update:
-> Batch update: added outfit selection/favorites, favorite stamps, character portraits,
-> home customization/BGM, and profile editing. Matched 42 captured official requests;
-> iPad testing next. Lessons and scoring parity remain in progress.
+- Starter accounts now include **「錆びついた胸に一雫の心を」** with **STELLA and
+  OLIVIER I** unlocked. Existing starter saves receive the same fallback on login;
+  imported accounts retain their progression.
+- The client remembers the selected difficulty between accounts. Remembering OLIVIER
+  on a save with no available OLIVIER charts can leave the list empty and hide the
+  difficulty selector. Providing one accessible chart avoids that dead end.
+- This is an intentional preservation fallback, not an original progression rule.
+  It adds no scores or clear records. **Device-confirmed:** a new starter account
+  displays the song list with OLIVIER already selected.
 
-## Priority diagnosis (no new implementation batch)
+### Fix default-song STELLA progression
 
-Customization testing switched to private. Audit found missing player-rank XP at live
-finish, daily lesson usage misinterpreted as remaining allowance, empty sense-voice ID
-lists despite preserved audio, and incomplete activity logs/story gating/mission triggers.
-BannerMaster exists (998 entries); login bonus reward schedules are absent from raw
-master but a successful two-bonus response is archived. See PRIORITY-AUDIT.md.
-Feature count stays 24; these findings are not claimed as implemented fixes.
+- Default songs now receive ownership records during starter initialization and when
+  existing starter saves log in. Previously, the client allowed these songs to play,
+  but the server could skip their difficulty unlocks because those records were absent.
+- The recovered EXTRA requirement is a clear with **10 or fewer GOOD-or-worse
+  judgments**. Server checks cover both sides of that boundary and repeat initialization.
+- **Device-confirmed:** the reported default-song STELLA issue was resolved; OLIVIER
+  availability also looked correct in subsequent testing. This is not verification
+  of every unlock condition. The underlying STELLA/OLIVIER progression logic comes
+  from upstream; this repair supplies the missing starter data.
 
-## Comic preservation completed
+The latest code checks passed 34 unit tests, alongside targeted database checks.
+The feature inventory remains **30 groups**; these changes repair existing onboarding,
+rewards and song progression rather than adding separate gameplay systems.
 
-Preserved all 264 comic PNGs referenced by ComicMaster, rather than only the five
-opened during capture. All 264 return HTTP 200 from the local backend with matching
-SHA-256 hashes. Added tools/preserve_comics.py and private per-file report. User
-confirmed the rest of the customization test batch looked good. Feature-group count
-remains 24 (comics counted under supporting asset preservation).
+## September 30, 2026 — Reroll gacha and iOS setup
 
-Copy-ready update:
-> All 264 comics are now preserved and served locally, with every image verified.
-> Customization testing looks good. Next priority before shutdown: capturing circles
-> and multiplayer behavior. Exact scoring and configurable limits remain pending.
+- Added persistent reroll sessions: the entry ticket is spent once, rerolls replace
+  the pending result, and confirmation grants the selected result only once.
+  Pending results survive reconnects. Reroll odds and limit interpretation remain
+  approximations; supported guaranteed banners include at least one Rare4 actor.
+- **Device-confirmed:** initial draw, reroll and confirmation. **Server-tested:**
+  reconnect persistence, duplicate/concurrent confirmation and reward accounting.
+  The device test used a separately granted entry ticket; this change does not grant
+  every starter account extra reroll tickets.
+- Improved certificate setup with reuse of an existing trusted certificate store,
+  distinct names for newly generated certificates, fingerprint display and TLS
+  diagnostics. Reusing the working certificate resolved a gacha-screen hang on the
+  test phone; the precise client validation failure was not established.
+- Added Japanese and English [iOS rollback instructions](IOS-ROLLBACK.md).
+  **Device-confirmed:** an Apple-authorized 2.31.3.425 package replaced 3.0.0.432
+  in place on an iPhone, followed by local asset downloads, home access and song entry.
+  That test needed no uninstall, IPA decryption or re-signing. Windows rollback and
+  full Docker setup remain unverified.
+- **Archived only:** additional static resources, including all 826 distinct
+  BannerMaster image paths and 30 help-index image references. This audit did not
+  add them all to the public downloader or establish complete historical coverage.
 
-Routing changed to official for final preservation captures; marker stored in
-private/final-preservation-session.json. No unlimited-mode policy has been deployed.
+Persistent reroll sessions bring the feature inventory from **29 to 30 groups**.
+The base gacha implementation remains upstream work.
 
-## Small EXP correction batch
+## September 29, 2026 — Portable preview and data preservation
 
-Fixed single-card leveling to round EXP per item before multiplying quantity. Seven
-fresh official upgrades across rarities1–4 now match level and remaining EXP, including
-level1->3 and a two-item request. Seven gameplay regressions also passed. Existing
-feature correction; count stays24. Bulk-level/cap edge cases remain unverified.
+### Local-server preview 0.1.0
 
-Copy-ready update:
-> Fixed per-item EXP rounding; seven official upgrade samples across all four rarities
-> now match, including multi-level jumps. Captured repeat lessons, a rank-up, stamina/
-> autoplay XP, and a failed multi-stage course. Broader mode implementation is next.
+- Packaged the preservation changes with a pinned backend, locked dependencies,
+  account import, local account linking, starter creation and per-install secrets.
+- Added a bilingual device setup page, WireGuard startup, certificate delivery,
+  diagnostics, backup guidance and a PostgreSQL Compose recipe.
+- Account setup refuses to overwrite an existing save. One installation hosts one
+  shared save; this is not a public multi-user service.
+- Initial server tests covered import, fresh creation, authentication, linking,
+  master-data delivery and rejection of invalid setup. Later device milestones are
+  recorded above. Windows and complete Compose orchestration remain unverified.
+- Account exports, app packages, credentials and game media are not bundled with
+  the public server repository.
 
-## Lesson, rank, daily usage and multi-song course batch
+### Download and archive coverage
 
-Four additional user-facing groups (28 total): lesson lifecycle and score rewards;
-player rank XP/stamina restoration; daily usage/reset accounting; multi-song course
-progression/certification/entry fees/rewards. Character key-mission claims extend the
-existing character progression group and are not counted separately.
+- Added a resumable official-CDN downloader for master data, iOS 1.96.0 catalogs and
+  bundles, charts, song configurations and comics. Downloads use integrity checks,
+  atomic writes and explicit missing-file reports.
+- Added 30 known missing story scripts to the standard download plan, with verified
+  metadata. Story voices and backgrounds remain separate asset downloads; complete
+  poster-story and unindexed-story coverage is not established.
+- The local archive verified **34,057 catalog bundles** and **36,333 of 36,363 planned
+  paths**. The remaining 30 chart/configuration URLs returned 404. A later audit tied
+  those paths to future-dated entries; no guessed chart replacements were introduced.
+- Download samples and repeat-download checks passed. These counts describe the
+  preserved archive, not a promise that every URL remains available or that all
+  content has been played on a fresh device. Android coverage remains incomplete.
+- Starter accounts initially received 10,000 song tickets directly. The October 1
+  inbox gift supersedes that default, so imported accounts can receive support too.
 
-Lesson star points and uncertain limits use explicit generous preservation policy in
-preservation-rules.json. Rank XP matches the captured lesson and stamina samples, not
-all possible modifiers. Course failure matches the captured three-stage run; successful
-certification/reward deduplication is tested synthetically. Full client no-limits support,
-rating history, sense voices and multiplayer remain pending. iPad confirmation pending.
+### Client 3.0.0 investigation
 
-Copy-ready update:
-> Added lessons and score rewards, player rank XP, daily usage/reset handling, and
-> multi-song course progression with entry fees and one-time rewards. Unknown formulas
-> use documented generous defaults. Server tests pass; iPad testing next. 28 feature
-> groups now extended from the upstream backend. Circles/multiplayer capture continues.
+- Account-linking tests did not get a fresh 3.0.0 installation past the end-of-service
+  notice. Server authentication checks alone did not establish client compatibility.
+- The supported playback path remains 2.31.3. The investigation did not establish
+  whether gameplay code was removed from 3.0.0.
 
-Deployment verified: backed up live account, restarted private backend, authenticated
-account fetch returns 2,607 records and preserved photo files still match. Routing
-remains official. Validation: seven progression tests plus four live-mode, seven
-upgrade/gameplay and four mission-claim regressions passed (22 tests total). Lesson
-party edits, duplicate finishes, key claims, once-only course rewards, paid/waived/
-unlimited server entry policies, retirement and daily reset are covered. Device tests
-remain pending; this is not full numerical parity certification.
+## September 28–29, 2026 — Gameplay preservation around shutdown
 
-## Theater/MV viewing bookkeeping batch
+### Progression, rewards and customization
 
-Replaced inherited false-result placeholders for WatchTheaterStory and WatchMusicVideo
-with master-validated, persistent watched records. Repeated views return the same record,
-matching the captured MV behavior. One additional feature group: performance viewing
-records (29 total); existing media transport is not counted again. Five photo/viewing
-tests passed, including duplicate views, invalid IDs and existing photo/album regressions.
-The two freshly requested theater bundles serve locally with byte-exact verification.
-Private playback with custom/original casts and theater viewing still needs device testing.
+- Added or repaired song/chart purchases, actor and equipment upgrades, story
+  rewards, star-rank claims, missions, Anthology and Audition progression.
+- Added photo development and persistent albums, including themes, decorations,
+  stamps and character tags.
+- Added outfit selection and favorites, favorite stamps, character portraits,
+  home customization, home BGM and profile editing. Relevant beginner missions
+  now advance with these actions.
+- **Device-confirmed:** the main upgrade/progression flows, mission claims,
+  Anthology, ordinary auditions, customization and album saves. Captured-request
+  and database tests provide additional coverage, not certification of every edge case.
+- Corrected actor EXP rounding per item. Seven captured upgrades across all four
+  rarities matched level and remaining EXP, including multi-level jumps. Bulk-level
+  and cap edge cases remain unverified.
+- Preserved and verified local delivery of all **264 comics** listed in the master data.
 
-Copy-ready update:
-> Fixed theater/MV viewing records and verified the latest theater assets serve locally.
-> Repeated views persist correctly; five photo/viewing tests pass. Custom/original cast
-> playback still needs a private-server device check. 29 feature groups extended.
+### Lessons, courses and viewing records
 
-## Post-shutdown content windows
+- Implemented lesson lifecycle/rewards, player-rank XP and stamina restoration,
+  daily usage/reset accounting, and multi-song course progression with entry costs
+  and one-time rewards. These additions brought the inventory to **28 groups**.
+- Server tests cover course failure, certification, retirement, duplicate finishes,
+  daily resets and reward deduplication. Rank XP matches captured samples rather
+  than every possible modifier. Lesson rewards and uncertain limits use documented
+  generous approximations in `preservation-rules.json`.
+- Added persistent theater/MV viewing records, bringing the inventory to **29 groups**.
+  Repeated viewing reuses the record; invalid IDs are rejected. Preserved media
+  delivery was checked separately. Viewing records do not establish complete
+  asset coverage or verification of every cast/viewing combination.
 
-Added a private master-data revision extending 626 final-boundary end-date fields
-(including nested shop entries) to the game's existing 2100 sentinel. Includes final
-Anthology/Event, campaigns and live schedules. Preserves unknown columns and keeps the
-original archived DB untouched; no system-clock changes or account rewrites. Cached
-server master dates receive the same adjustment. New manifest version/URI forces a
-client master refresh on login. This is a content availability correction, not a new
-feature group: count stays 29. Extending display dates does not implement League or
-multiplayer mechanics.
+### Keep content available after shutdown
 
-Validation: recursive master comparison permits only boundary timestamp replacements;
-four live-mode regressions pass, including 256 Anthology stages/550 audition phases.
-Deployed manifest/master bytes and authenticated account fetch verified; private routing
-retained. Device confirmation pending. No failing solo-start API was observed at initial
-report, so the solo client error's cause remains unconfirmed.
+- Extended 626 end-date fields at the final service boundary, including nested
+  shop entries, schedules and Anthology-related content. The original master archive
+  is retained; a new master revision refreshes the client without changing its clock.
+- **Device-confirmed:** the revision resolved performance-menu error 81 after
+  shutdown. Extending availability dates does not implement multiplayer or League.
 
-Copy-ready update:
-> Added a preservation master-data revision extending final-service content windows,
-> including Anthology and schedules. Original master archive retained. Server checks
-> pass; restart the app to refresh. Solo-play error still needs device confirmation.
+## Remaining limitations
 
-Device confirmation: user reports the post-shutdown master-date revision resolved
-opening the performance menu (error81). The final private test batch was reported
-working before the shutdown-boundary issue. Exact scoring and multiplayer remain
-outside that confirmation. Client IPA/device-backup preservation is the next task.
+- Exact scoring parity, Audition challenge scoring and some reward/lesson formulas
+  remain incomplete or approximate. Working solo-play flows are not a claim of
+  complete official-server parity.
+- Multiplayer, circles and Theater League remain incomplete. Captured requests and
+  accessible menus do not establish playable matches or full social functionality.
+- Some story behavior and media coverage remain provisional. Locally cached content
+  can make a device test succeed even when a fresh installation would need more assets.
+- A configurable client-wide no-limits mode and unlock-all mode are not implemented.
+  Generous fallback rewards do not replace missing gameplay protocols.
+- Clean-install name entry, Windows setup/rollback, and full Compose orchestration
+  still need device or end-to-end confirmation.
 
-## iPhone 3.0.0 compatibility probe (diagnostic only)
+## Feature inventory
 
-Fresh-install official capture reaches Environment only. Response retains asset version
-1.96.0 and adds a trailing boolean true at index13, outside the old schema. iPhone-only
-proxy now changes that field to false to test whether it controls shutdown mode; its
-meaning is not yet confirmed. Original response remains archived before modification.
-Wire-level check verifies this is the sole response change. This does not establish
-v3 gameplay compatibility or add a completed feature; count remains29. iPad service
-and account untouched. Device retry pending.
+**30 player-facing feature groups** have been added or substantially repaired around
+our pinned upstream backend. This counts systems, not individual routes or bug fixes;
+it does not mean every group was wholly absent upstream or is fully verified.
 
-## Isolated iPhone 3.0.0 transfer experiment — September 29
+| # | Feature group | # | Feature group |
+|---|---|---|---|
+| 1 | Song purchases | 16 | Album layouts, themes, decorations and stamps |
+| 2 | OLIVIER chart purchases | 17 | Photo character tags |
+| 3 | Actor experience/levels | 18 | Selected outfits |
+| 4 | Actor sense upgrades | 19 | Favorite outfits |
+| 5 | Actor talent upgrades | 20 | Favorite stamps |
+| 6 | Accessory levels | 21 | Character-page portraits |
+| 7 | Poster levels | 22 | Home display customization |
+| 8 | Poster limit breaks | 23 | Home BGM |
+| 9 | Actor side stories/rewards | 24 | Profile editing |
+| 10 | Poster story unlocking (provisional) | 25 | Lessons/rewards (approximate) |
+| 11 | Character star-rank rewards | 26 | Player-rank XP/stamina restoration |
+| 12 | Mission rewards/progression | 27 | Daily usage/reset accounting |
+| 13 | Anthology progression/rewards | 28 | Multi-song courses and entry/rewards |
+| 14 | Auditions (scoring incomplete) | 29 | Theater/MV viewing records |
+| 15 | Photo development/storage (rarity provisional) | 30 | Persistent reroll sessions (approximate odds) |
 
-- Implemented/deployed: separate cloned database, backend and iPhone tunnel routing;
-  account-bound private linking credentials with password hashing and separate JWT
-  secret. Original imported login-token bridge disabled on the experimental backend.
-- Tested: incorrect password rejected; correct transfer returns identity/login token;
-  authentication and user-data HTTP request succeed; iPad backend rejects iPhone token.
-- Device confirmation pending: transfer UI, v3 account loading and asset downloads.
-  The additional v3 Environment boolean remains experimentally set false; its meaning
-  is unverified. This does not establish that v3 retains playable rhythm-game code.
-- Working iPad service/database untouched; backup made before cloning. No official
-  transfer credentials required. Feature-group inventory remains **29**; this is
-  supporting preservation work, not a completed new gameplay group.
-
-### iPhone device follow-up
-
-- Phone reached the private GetTakeOverAccount endpoint and the user reports the
-  transfer appeared accepted. On the subsequent title attempt it requested only
-  Environment, then still displayed the EOS notice. No subsequent Authenticate,
-  user-data, or asset-download request was observed from the phone. Earlier
-  successful authentication/user-data checks were scripted backend tests.
-- Account-transfer acceptance is therefore not confirmation of account-data loading
-  or v3 gameplay compatibility. Investigate client startup before asset delivery.
-  Feature inventory remains 29.
-
-- iPhone cold-start retest: user again observed EOS notice. Captured phone traffic
-  again stops after Environment (HTTP 200), with no Authenticate or download request.
-  Restart did not resolve it. Further transfer retries are not justified by current
-  evidence; v3 startup/protocol inspection or recovery of the older client is needed.
-  This observation does not prove gameplay code was removed from v3.
-
-## 0.1.0 — portable local-server preview (September 29, 2026)
-
-- Packaged the working preservation overrides separately from the personal development
-  environment. Pinned upstream backend and Python dependency lock; generated per-install
-  secrets; no account files, captures, game assets, or personal diagnostic replay included.
-- Added validated exporter-ZIP import, same-installation token-hash association, local
-  linking credentials, and explicit fresh starter-account creation. One account per install;
-  refuses existing accounts/nonempty databases. Fresh is not unlock-all.
-- Added foreground server/tunnel lifecycle, private bilingual device setup page, local
-  certificate-only endpoint, data diagnostics, PostgreSQL Compose recipe, English/Japanese
-  quick starts, data requirements and backup guidance.
-- Tested locally: 13 unit tests; real exporter ZIP imported into a disposable PostgreSQL 17
-  database; fresh account created in another database. Both pass wrong-password rejection,
-  linking, authentication, user-data serialization, Environment/master delivery and missing
-  asset 404. Repeat account creation is rejected. WireGuard binds successfully; certificate
-  endpoint serves the certificate and refuses private-key/credential paths.
-- Device-confirmed behavior refers to the existing development iPad checks above.
-  This portable release has not yet been device-tested end to end. Fresh tutorial/home
-  onboarding, Windows, and Docker Compose orchestration remain unverified. iOS 3.0.0
-  remains blocked at EOS. Multiplayer/circles, exact scoring and unlock-all remain incomplete.
-- Captured-only APIs remain captured-only. The inventory stays at **29 gameplay feature
-  groups**; packaging/import infrastructure is not counted as new gameplay.
-
-Earlier entries describe development history. Personal comparison databases, captured-pull
-replays and the separate iPhone v3 experiment are not active in this release.
-
-## Documentation clarification — September 29, 2026
-
-- Clarified the English/Japanese 3.0.0 notes: a newly installed client remained at
-  the EOS notice after linking; compatibility is not guaranteed. Removed references
-  that assumed readers knew the private iPhone experiment. Updated status tables
-  and troubleshooting to describe observed results rather than a universal claim.
-- Documentation only; no server behavior or verification status changed. Gameplay
-  inventory remains 29 groups, based on the pinned server-of-dreams backend.
-
-## Official-CDN downloader — September 29, 2026
-
-- Implemented/tested: direct official-source downloader for pinned raw master, iOS
-  1.96.0 catalogs/bundles, master-listed charts/configs and comics. No game API login
-  required. File-level restart, checksum verification, atomic writes, bounded workers,
-  explicit missing-file reports and English/Japanese setup instructions.
-- Tests: all 18 unit tests pass, including corruption repair, hash/length rejection,
-  path validation, 403/404/redirect handling and verified-file skipping. Eight initial
-  official-CDN probes returned HTTP 200 and matched preserved bytes. The new downloader
-  separately fetched master/catalogs, sample bundles/audio/chart/comic and skipped
-  verified files on rerun. Enumerated 36,333 media paths; not a full download test.
-- Device-confirmed: no new device result in this batch. Existing iPad results remain
-  as documented. Fresh 3.0.0 onboarding remains unresolved. Some chart paths were
-  previously 404; full static banners/story coverage and future CDN availability are
-  not guaranteed. No game-media files or credentials are published.
-- Captured-only features remain unchanged. Gameplay inventory stays at **29 groups**;
-  downloader/setup infrastructure is not another gameplay feature. Backend remains
-  UnknownSekai/server-of-dreams at 3cfca23267fb0f79d7336732db768e1510f20313.
-
-## Supplemental story downloads — September 29, 2026
-
-- Implemented/tested: default downloader now includes the 30 exact known story-script
-  gaps (20 main, 10 card-side) through the normal download command. No separate
-  story-only setup option is exposed.
-  SHA256-verified scenes generate server metadata. Added gzip/Brotli/deflate transfer
-  handling with separate wire-length/MD5 and decoded-file SHA256 verification.
-- All 30 official-CDN downloads matched preserved scene bytes. Verified-file rerun
-  and isolated preparation installed all scene paths/metadata. All 21 unit tests pass.
-- Device-confirmed: no new playback result. Story voices/backgrounds remain separate
-  catalog downloads; poster/unindexed story completeness, future CDN availability and
-  fresh-client playback are not guaranteed. Captured-only features remain unchanged.
-- Added bilingual coverage list and instructions. Only identifiers/metadata/hashes are
-  published, no scenes or credentials. Gameplay inventory remains **29 groups** on
-  pinned UnknownSekai/server-of-dreams; this is preservation/setup coverage.
-
-## Organized archive and fresh-account resources — September 29, 2026
-
-- Implemented/tested: fresh creation grants 10,000 歌劇目録 (item 130001) once, inside
-  account initialization. Configurable via fresh_song_tickets (0 disables). This is a
-  generous preservation policy; imported accounts receive no extra grant. Song/story/
-  chart unlock conditions remain. Upstream seed otherwise remains unchanged.
-- 24 unit tests pass. A disposable PostgreSQL account received 10,000 tickets; song
-  purchase consumed 10 and persisted ownership. Story handler/database checks passed:
-  initial read reward, read-all after skip, direct full read, repeat suppression and
-  stored flags; locked side-story rejection and unlocked reward/character progression.
-- Local archival verification: a separate setup-compatible data directory was assembled
-  from preserved files with checksum comparisons, then checked with the downloader.
-  All 34,057 catalog bundles are present. Of 36,363 download-plan paths, 36,333 verified;
-  30 chart/config paths under 10172 and 901–904 returned 404. Additional saved scenes,
-  upstream episodes and static media are included locally. No media/archive is published.
-- Device-confirmed: no new device result. Fresh onboarding, all story categories and
-  chapter-completion reward parity remain unverified. Captured-only features unchanged.
-- Gameplay inventory remains **29 groups** on pinned UnknownSekai/server-of-dreams
-  3cfca23267fb0f79d7336732db768e1510f20313; this updates setup policy and verifies existing
-  story-reward behavior rather than adding a new gameplay group.
+Account export/import and automatic recovery, client compatibility, asset preservation, downloader tooling
+and documentation support these features and are not additional gameplay groups.
