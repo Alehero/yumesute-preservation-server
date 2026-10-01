@@ -11,6 +11,27 @@ pinned to `3cfca23267fb0f79d7336732db768e1510f20313`.
 [TeamOpenSirius/OpenSiriusServer](https://github.com/TeamOpenSirius/OpenSiriusServer)
 was an independent protocol reference, not a second backend merged into this release.
 
+## October 1, 2026 — Recover accounts from the local setup page
+
+- Added a Japanese/English recovery page on the server computer. Enter official
+  transfer credentials to download a verified account ZIP without changing any save.
+  The page explicitly retries the official service even when normal login is already
+  associated with a starter. Recovery errors never create a starter through this page.
+- Optional import is a separate, confirmed action after downloading. It retains the
+  starter and never overwrites progress for an official account already stored locally.
+  Verified credentials previously assigned by outage fallback can be reassigned to the
+  recovered save; ordinary login remains local-first.
+- Backups are also retained in `private/recovered-exports`. Import sessions expire
+  after 15 minutes or a server restart. The page accepts requests only on loopback
+  with same-origin checks; it is not a public credential-collection website.
+- **Server-tested:** ZIP validity, download without account mutation, credential and
+  outage failures, explicit fallback reassignment, retained local progress, single-use
+  import, and host/origin/request-token checks. The existing 34 tests also pass.
+- **Device confirmation pending:** restoration through this browser flow followed by
+  game login. Official API availability and compatible app/media remain prerequisites.
+- Gameplay inventory remains **30 groups**. This extends account-preservation tooling
+  around the credited pinned upstream backend, not gameplay or multiplayer support.
+
 ## October 1, 2026 — Recover official accounts directly at login
 
 - Unknown official login tokens or transfer ID/password pairs can now retrieve the

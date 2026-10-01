@@ -170,7 +170,7 @@ class Recovery:
             await c.conn.execute("INSERT INTO preservation_credentials VALUES($1,$2,'starter-fallback')",key,uid)
         return uid
 
-    async def import_snapshot(self,raw,keys):
+    async def import_snapshot(self,raw,keys,*,replace_starter_aliases=False):
         try:
             summary=inspect_snapshot(raw)
         except (ValueError, TypeError, IndexError, KeyError):
@@ -187,8 +187,12 @@ class Recovery:
         if not any(n=='UserProfile' for n,_,_ in rows):raise RecoveryError('IncompleteRecoveredAccount')
         async with self.app.acquire_db() as c,c.transaction():
             await c.conn.execute('LOCK TABLE accounts IN EXCLUSIVE MODE')
-            prior=[await c.conn.fetchval('SELECT user_id FROM preservation_credentials WHERE digest=$1',k) for k in keys]
-            if any(x is not None and x!=uid for x in prior):raise RecoveryError('CredentialAlreadyLinked')
+            prior=[await c.conn.fetchrow('SELECT user_id,source FROM preservation_credentials WHERE digest=$1',k) for k in keys]
+            def replaceable(row):
+                return (replace_starter_aliases and self.account.get('mode')=='fresh' and
+                        row['user_id']==self.account['user_id'] and row['source']=='starter-fallback')
+            if any(row and row['user_id']!=uid and not replaceable(row) for row in prior):
+                raise RecoveryError('CredentialAlreadyLinked')
             exists=await c.fetchrow(get_account_by_id(uid))
             if not exists:
                 # This preview permits one recovered identity, preserving the original starter.
@@ -211,7 +215,9 @@ class Recovery:
             elif not await c.conn.fetchval('SELECT EXISTS(SELECT 1 FROM preservation_recovery WHERE user_id=$1)',uid) and not (self.account.get('mode')=='import' and self.account.get('user_id')==uid):
                 raise RecoveryError('LocalIdentityConflict')
             # Existing accounts are NEVER reimported: preserve all subsequent local progress.
-            for key in keys:
+            for key,row in zip(keys,prior):
+                if row and row['user_id']!=uid and replaceable(row):
+                    await c.conn.execute('DELETE FROM preservation_credentials WHERE digest=$1',key)
                 await c.conn.execute("INSERT INTO preservation_credentials VALUES($1,$2,'official') ON CONFLICT(digest) DO NOTHING",key,uid)
         return uid
 

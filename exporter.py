@@ -13,7 +13,7 @@ FORMAT = "yumesute-account-export"
 VERSION = 1
 
 
-def save_snapshot(root, body, login_hash=None, client_version=None):
+def save_snapshot(root, body, login_hash=None, client_version=None, source="official-api-passive-capture"):
     summary = inspect_snapshot(body)
     now = datetime.now(timezone.utc)
     manifest = {
@@ -21,7 +21,7 @@ def save_snapshot(root, body, login_hash=None, client_version=None):
         "format_version": VERSION,
         "exporter_version": "0.1.0",
         "captured_at": now.isoformat(),
-        "source": "official-api-passive-capture",
+        "source": source,
         "endpoint": "GET /api/data/user",
         "client_version": client_version,
         "snapshot_sha256": sha256(body).hexdigest(),

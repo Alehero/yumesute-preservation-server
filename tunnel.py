@@ -56,7 +56,7 @@ def write_private(path, text):
     path.chmod(0o600)
 
 
-def setup_page(private, host, wg_port, cert_port, ca_name="", ca_fingerprint=""):
+def setup_page(private, host, wg_port, cert_port, ca_name="", ca_fingerprint="", backend_port=8125):
     keys_path = private / "wireguard-keys.json"
     if keys_path.exists():
         keys = json.loads(keys_path.read_text())
@@ -97,6 +97,7 @@ Then General → About → Certificate Trust Settings → enable full trust for 
 <li>Fully close and reopen the compatible game. Imported accounts with a bridge should log in normally. Otherwise use Menu → Data Link → linking password, with private/linking-credentials.txt.</li>
 <li>Test home → solo play → results → restart to check persistence. Keep your original account export.</li>
 <li>Switch WireGuard off, stop the terminal with Control+C, and keep the certificate store for future sessions; remove the device profile only when you no longer use this server.</li></ol>
+<p><a href="http://127.0.0.1:{backend_port}/recovery">Recover official account / 公式アカウントの復元</a> — open on this computer. Download a backup before optional import. / このパソコンで開き、先にバックアップを取得してください。</p>
 <h2>日本語</h2><ol><li>端末とパソコンを同じWi-Fiに接続し、端末のHTTPプロキシをオフにします。</li>
 <li>WireGuardでQRコードを読み取り、トンネルを有効にします。他の保存用トンネルはオフにしてください。</li>
 <li>Safariで上記の証明書URLを開き、設定 → 一般 → VPNとデバイス管理からインストールします。さらに「一般 → 情報 → 証明書信頼設定」で完全な信頼を有効にします。</li>
@@ -148,7 +149,7 @@ async def run(args):
     private = ROOT / "private"
     private.mkdir(mode=0o700, exist_ok=True)
     ca_dir, ca_name, ca_fingerprint = prepare_ca(private, getattr(args, "ca_dir", None))
-    page = setup_page(private, host, args.wg_port, args.cert_port, ca_name, ca_fingerprint)
+    page = setup_page(private, host, args.wg_port, args.cert_port, ca_name, ca_fingerprint, args.port)
     # Keep non-game TLS connections opaque. The certificate download has no TLS.
     opts = options.Options(
         confdir=str(ca_dir),

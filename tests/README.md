@@ -24,3 +24,10 @@ service restart, preserved local progress, and actual transfer/auth/data HTTP ro
 It intentionally changes disposable data. Keep the fixture private; never use a live
 save database for this test. Run both scripts from a prepared installation with the
 normal dependencies available.
+
+After the disposable recovery check, run `check_recovery_page.py --snapshot
+/private/user-data.response.bin` in the same prepared installation. It uses a mocked
+official service and the disposable `yumesute_recovery_checks` database to test
+browser request protection, no-mutation export, archive verification, and explicit
+starter-fallback reassignment without overwriting local progress. Reinitialize the
+disposable database and run the preceding recovery check before repeating it.

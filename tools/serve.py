@@ -44,6 +44,10 @@ def manifest():
 async def authenticate(payload, app):
     starter = await authenticate_starter(payload, app, ACCOUNT)
     if starter is not None: return starter
+    if payload and payload.login_token:
+        known=await RECOVERY.local_token_uid(payload.login_token)
+        if known is not None:
+            return AuthenticateResult(token=await RECOVERY.session(known),ban_level=0)
     expected=ACCOUNT.get('token_sha256')
     if expected and payload and hmac.compare_digest(hashlib.sha256((payload.login_token or '').encode()).hexdigest(), expected):
         async with app.acquire_db() as conn:
@@ -130,6 +134,9 @@ async def local_files(request,call_next):
         return Response('Asset not available locally',404)
     response.headers['X-Yumesute-Backend']='local-preservation'
     return response
+
+from recovery_page import install as install_recovery_page
+install_recovery_page(app,RECOVERY,ROOT,int(os.environ.get('YUMESUTE_PORT','8125')))
 
 if __name__=='__main__':
     import uvicorn

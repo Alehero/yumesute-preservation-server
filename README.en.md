@@ -81,6 +81,21 @@ A clean client with no token uses the local starter. Registration reuses that sa
 
 Keep the computer awake and terminal open. To stop: **turn WireGuard off, then press Control+C**. Stop PostgreSQL with `docker compose stop`. Next time, run `docker compose up -d --wait db` and `server.py start`. Do not re-import your account each session.
 
+## Download an official-account backup from your browser
+
+With the server running, open **[Account recovery](http://127.0.0.1:8125/recovery)**
+on the **server computer**, or follow its setup-page link. Use the chosen backend
+port if you changed it. Enter your **official linking ID/password**, not your Apple
+ID or local server credentials. The page downloads a verified ZIP and also keeps a
+private copy under `private/recovered-exports`; this does not change your save.
+
+After saving the ZIP, optionally choose **Import locally** within 15 minutes.
+The starter is retained, and progress on an already-recovered official account is
+never overwritten. Then use your official linking credentials through the game's
+Data Link screen to select the local recovered account. This explicit flow also
+works when ordinary login is already linked to a starter. It never falls back to a
+starter on failure. Initial recovery still requires working official endpoints.
+
 ## Status
 
 | Area | Status |
