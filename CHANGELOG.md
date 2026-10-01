@@ -434,3 +434,9 @@ test, not evidence of clean registration/name-popup behavior. Inventory remains
 - Implemented/tested: fresh saves receive default song 244, 「錆びついた胸に一雫の心を」, with STELLA and OLIVIER I released. Existing starter saves are repaired at login; imported saves are unchanged. Repeated grants are idempotent and create no scores or clear records. This is an intentional preservation fallback, not an official unlock rule.
 - Device-confirmed diagnosis: the same starter save displayed songs after the iPad switched from its remembered OLIVIER selection to NORMAL using the imported save. The new fallback still needs device confirmation.
 - Captured-only: no new captures. Inventory remains 30 feature groups; this is a starter-account compatibility repair on the pinned UnknownSekai/server-of-dreams backend.
+
+## 2026-10-01 — Default-song STELLA progression
+
+- Implemented/tested: fresh saves now initialize ownership rows for visible default songs (excluding the tutorial chart), including existing starter saves at login. Missing rows previously caused finish-time STELLA progression to skip playable default songs. Verified EXTRA clear boundary: 10 GOOD-or-worse qualifies, 11 does not; repeated initialization creates no duplicates.
+- Repaired the test starter's earned song 21 STELLA unlock using its recorded All Perfect clear. No scores were fabricated. Other chart progression still needs device testing.
+- Device-reported: qualifying play did not unlock STELLA before this repair. Captured-only: no new official captures. Inventory remains 30 groups; pinned upstream unchanged.
