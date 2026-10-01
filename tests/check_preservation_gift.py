@@ -8,7 +8,7 @@ database.database='yumesute_reroll_checks'
 from serve import app
 from helpers.auth import register,decode_jwt
 from models import RegisterPayload
-from preservation_gift import ensure_gift,receive,EVENT
+from preservation_gift import ensure_gift,receive,EVENT,NO_EXPIRY
 
 async def main():
     assert app.config.database=='yumesute_reroll_checks'
@@ -24,7 +24,14 @@ async def main():
             assert len(rows)==1
             iid=rows[0]['inbox_id']
             row=await c.conn.fetchrow('SELECT * FROM inbox WHERE "userId"=$1 AND id=$2',uid,iid)
-            assert row['thingQuantity']==10000 and not row['isTimeLimited'] and row['receiveLimitAt']==0
+            assert row['thingQuantity']==10000 and not row['isTimeLimited'] and row['receiveLimitAt']==NO_EXPIRY
+        # Repair the initial zero-deadline encoding without issuing another gift.
+        async with app.acquire_db() as c:
+            await c.conn.execute('UPDATE inbox SET "receiveLimitAt"=0,checked=true WHERE "userId"=$1 AND id=$2',uid,iid)
+        await ensure_gift(app,uid)
+        async with app.acquire_db() as c:
+            row=await c.conn.fetchrow('SELECT * FROM inbox WHERE "userId"=$1 AND id=$2',uid,iid)
+            assert row['receiveLimitAt']==NO_EXPIRY and not row['checked']
         assert await stock()==before
         await asyncio.gather(receive(app,uid,[iid,iid]),receive(app,uid,[iid]))
         assert await stock()==before+10000

@@ -408,3 +408,16 @@ This is a local preservation gift, not a recreated official event or an unlock-a
 feature. Stella/Olivier requirements still apply and remain under investigation.
 Feature inventory stays **30** (existing rewards group). Backend remains pinned to
 UnknownSekai/server-of-dreams 3cfca23267fb0f79d7336732db768e1510f20313.
+
+
+## October 1, 2026 — gift deadline compatibility
+
+Captured evidence: official non-time-limited Inbox data uses deadline
+4102358400000000 rather than zero. Implemented/tested: the preservation gift now
+uses that sentinel with isTimeLimited=false; previously issued, unclaimed zero-
+deadline gifts are repaired and marked unchecked for delivery, without reissue.
+Disposable database tests cover this migration plus repeat/concurrent claims.
+Deployed locally; device visibility/claim confirmation remains pending. The iPad
+now reaches the shared starter save; its completed tutorial is from the iPhone
+test, not evidence of clean registration/name-popup behavior. Inventory remains
+30 groups on pinned UnknownSekai/server-of-dreams 3cfca23267fb0f79d7336732db768e1510f20313.
