@@ -11,14 +11,15 @@ pinned to `3cfca23267fb0f79d7336732db768e1510f20313`.
 [TeamOpenSirius/OpenSiriusServer](https://github.com/TeamOpenSirius/OpenSiriusServer)
 was an independent protocol reference, not a second backend merged into this release.
 
-## October 1, 2026 — Circle compatibility under device test
+## October 1, 2026 — Circle menu compatibility
 
 - PR #2 by [tomyuan520](https://github.com/tomyuan520) adds safe empty Circle
   discovery/ranking responses and non-null support-company data, using the pinned
   upstream models. Conflicts with newer onboarding/reward handlers were resolved.
 - **Server-tested and deployed to the development test server:** route precedence,
-  response shapes and account-scoped support levels. The rank-30 unlock and Circle
-  menu are awaiting device confirmation. PR #2 has been merged into main.
+  response shapes and account-scoped support levels. **Device-confirmed:** opening
+  the Circle menu succeeds. The rank-30 unlock presentation has not been separately
+  confirmed. PR #2 has been merged into main.
 - Circle creation/joining and multiplayer remain unsupported. This compatibility
   test does not add a completed gameplay group; the inventory remains **30**.
 
