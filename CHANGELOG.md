@@ -11,6 +11,18 @@ pinned to `3cfca23267fb0f79d7336732db768e1510f20313`.
 [TeamOpenSirius/OpenSiriusServer](https://github.com/TeamOpenSirius/OpenSiriusServer)
 was an independent protocol reference, not a second backend merged into this release.
 
+## October 2, 2026 — Reconnect after laptop sleep or an IP change
+
+- Added Japanese/English recovery steps for checking the computer's current LAN IP,
+  restarting the server, and updating only WireGuard's Endpoint IP while retaining
+  custom ports and keys. Certificate reinstallation and account reimport are not needed
+  solely because the IP changed.
+- Explained DHCP-assigned IPs versus private Wi-Fi MAC rotation, with an optional
+  fixed private address plus router DHCP reservation for a managed home network.
+- **Observed in the development setup:** the host IP changed after sleep; the backend
+  remained healthy, and tunnel listeners were restarted on the new address. No claim
+  that MAC rotation caused that incident. Documentation-only change; inventory stays 30.
+
 ## October 1, 2026 — Public banner and help preservation
 
 - The public downloader now includes **1,132 verified static resources plus help.bin**,

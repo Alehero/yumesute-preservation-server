@@ -132,7 +132,7 @@ starter on failure. Initial recovery still requires working official endpoints.
 
 ## Troubleshooting
 
-- **Wrong LAN address:** `uv run --locked python server.py start --host 192.168.1.23` (use your computer's address). Re-import the changed QR configuration.
+- **Stopped connecting after sleep or a Wi-Fi change:** follow the recovery steps below; the computer may have received a different LAN IP address.
 - **Port conflict:** defaults are backend TCP 8125 (loopback), WireGuard UDP 51822, certificate TCP 8766, and PostgreSQL TCP 55433 (loopback). Use `start --port 8126 --wg-port 51823 --cert-port 8767`. Change DB port in both `.env` and `vendor/server-of-dreams/config.yml` before initialization.
 - **Certificate/tunnel failure:** check same LAN, guest-network isolation, computer firewall, and full certificate trust. Allow only the required traffic on your home network. Internet port forwarding is unnecessary.
 - **Missing images/songs or HTTP 404:** check `doctor` and `logs/backend.log`. Rerun the downloader for covered files, then copy recovered files into the matching server paths in DATA.md. Do not rerun prepare after configuring an account; it intentionally refuses that. Other missing media must be supplied locally. File counts are not proof of completeness. Do not clear the app cache to troubleshoot this.
@@ -140,6 +140,50 @@ starter on failure. Initial recovery still requires working official endpoints.
 - **Database connection failure:** check Docker Desktop and `docker compose ps`. Changing `.env` does not change a password inside an existing database volume. Do not casually delete the volume.
 
 See [DATA.md](DATA.md) for backups, data layout, and existing PostgreSQL. Issues in Japanese or English are welcome. Include OS/client versions, the failing step, and a sanitized error. **Do not upload account ZIPs, private folders, QR codes, or linking credentials.**
+
+### Connection stopped after sleep, reconnecting Wi-Fi, or a router restart
+
+The computer must remain awake while playing. A WireGuard toggle showing “on” does
+not prove the server is reachable. After waking, check the computer’s **current LAN
+IPv4 address**; DHCP can assign a different address even if its MAC address is unchanged.
+
+1. On Mac, open **System Settings → Wi-Fi → Details → TCP/IP** for the connected
+   network. On Windows, run `ipconfig` and use the IPv4 address of the connected
+   Wi-Fi/Ethernet adapter, not a VPN adapter or the default gateway.
+2. Stop the old server with **Control+C**, make sure PostgreSQL is running, and restart
+   using that address. For example (replace the example IP with your own):
+
+   ```sh
+   uv run --locked python server.py start --host 192.168.1.22
+   ```
+
+   Keep any custom `--port`, `--wg-port`, `--cert-port`, or `--ca-dir` options you use.
+3. In the device’s WireGuard app, edit the existing tunnel’s peer **Endpoint** to the
+   new computer IP, keeping its existing UDP port. For a default installation,
+   `192.168.1.21:51822` would become `192.168.1.22:51822`. Do not change keys or the
+   tunnel’s Interface Address. Alternatively, replace the profile using the refreshed
+   setup-page QR; do not leave duplicate tunnels enabled.
+4. Toggle the tunnel off/on, then fully close and reopen the game. If the computer’s
+   IP did not change, restart the server and toggle the tunnel before changing settings.
+
+An IP change alone does **not** require reinstalling certificates, importing the
+account again, or clearing game data. If it still fails, check that both devices are
+on the same LAN, the server terminal has no startup error, and the firewall allows
+the configured UDP port. Keep the laptop awake for the session.
+
+**IP address versus MAC address:** WireGuard’s Endpoint uses the computer’s IP
+(e.g. `192.168.1.22`). A MAC address identifies its network interface to the local
+network. Modern macOS offers **Private Wi-Fi Address: Off, Fixed, or Rotating** in
+Wi-Fi → Details. “Fixed” keeps a private address for that network; “Rotating” changes
+it periodically. See [Apple’s private Wi-Fi address guide](https://support.apple.com/en-us/102509).
+
+For a home network you administer, a router **DHCP reservation** for the server
+computer can reduce repeated Endpoint edits. If its private Wi-Fi address rotates,
+consider **Fixed** for that home network and reserve the IP against the Wi-Fi MAC
+actually shown for it. A fixed MAC alone does not guarantee a fixed IP. There is no
+need to turn private addressing off on every network or change the phone/iPad’s MAC
+to match the server. Changing the Mac’s Wi-Fi identity may itself require reconnecting
+and updating the reservation/Endpoint once.
 
 ## Development and attribution
 
