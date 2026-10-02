@@ -160,6 +160,30 @@ an account; do not delete a working save to make room for it.
 
 See [DATA.md](DATA.md) for backups, data layout, and existing PostgreSQL. Issues in Japanese or English are welcome. Include OS/client versions, the failing step, and a sanitized error. **Do not upload account ZIPs, private folders, QR codes, or linking credentials.**
 
+### Windows: certificate downloads on the PC, but hangs on the phone
+
+Ethernet on the PC and Wi-Fi on the phone work together if the router allows communication between them. Use the PC's active Ethernet IPv4 address from `ipconfig`, with the certificate port shown in setup (default TCP 8766).
+
+1. Keep the server running and confirm it prints **Local server tunnel ready**. Temporarily turn **WireGuard off on the phone** and open `http://YOUR_PC_IP:8766/cert.cer` in Safari. Downloading the certificate directly over the LAN does not require WireGuard.
+2. If the URL works on the PC but hangs on the phone, check **Settings → Network & internet → Ethernet → Network profile type**. On a **trusted home network**, select **Private**. Firewall rules restricted to Private networks do not apply while Ethernet is marked Public. Do not mark public/shared networks as trusted just for this setup.
+3. If needed, open **PowerShell as Administrator** and add these rules. Substitute your configured ports if different:
+
+   ```powershell
+   New-NetFirewallRule -DisplayName "Yumesute certificate" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 8766 -Profile Private -RemoteAddress LocalSubnet
+   New-NetFirewallRule -DisplayName "Yumesute tunnel" -Direction Inbound -Action Allow -Protocol UDP -LocalPort 51822 -Profile Private -RemoteAddress LocalSubnet
+   ```
+
+   If you already added these rules, changing the trusted network profile to Private is enough; do not add duplicates. Keep the firewall enabled. No router port forwarding is needed.
+4. Retry the certificate download. If it still hangs, check guest Wi-Fi/client isolation and other VPNs. After installing and trusting the certificate, turn the game tunnel back on. WireGuard being enabled alone does not prove connectivity; check for a recent handshake.
+
+### Gacha screen hangs: check the active server's certificate
+
+A gacha-screen hang was resolved by trusting the matching server certificate. This is a troubleshooting lead, not proof that every gacha freeze has the same cause.
+
+- Download and install the certificate from the **currently running server's setup page**. A different computer or installation may use a different certificate, even if both profiles are named “mitmproxy”.
+- Match the certificate identity shown in setup, then enable **Settings → General → About → Certificate Trust Settings → Full Trust** on the iPhone/iPad. Installing the profile alone is insufficient.
+- Fully close and reopen the game. If it still hangs, report whether it happens when opening Gacha, during a pull, or returning from results, together with sanitized terminal TLS errors. Do not share certificate private keys or WireGuard QR codes.
+
 ### Connection stopped after sleep, reconnecting Wi-Fi, or a router restart
 
 The computer must remain awake while playing. A WireGuard toggle showing “on” does
