@@ -1,5 +1,7 @@
 # Story coverage / シナリオの確認範囲
 
+**Developer reference; no additional setup steps. / 開発者向け資料：追加の導入作業はありません。**
+
 The pinned server-of-dreams archive supplies most scripts. Comparing its usable script/hash entries against the preserved master found these 30 missing scripts. They are now included in the official-CDN downloader; no guessing or authenticated game API is used.
 
 固定版server-of-dreamsのシナリオ・ハッシュ一覧を保存マスターと比較し、不足30件を特定しました。公式CDNからの取得ツールに追加済みです。URLの総当たりや認証付きゲームAPIは使用していません。

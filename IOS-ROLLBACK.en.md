@@ -38,8 +38,6 @@ ipatool download -b com.kms.worlddaistar --platform ipad --external-version-id 8
 
 Verify metadata reports **2.31.3 / 2.31.3.425**. The `ipad` package above was successfully installed on our iPhone. Do not omit the external version ID: the default is the latest app. An account-authorized IPA is not universally installable by other Apple Accounts.
 
-Upstream also provides a [decrypted IPA](https://github.com/UnknownSekai/server-of-dreams/releases/tag/XAPK%2FIPA). We used it for code inspection, **not a verified stock-device installation**. Decryption does not supply a valid installation signature; it is not interchangeable with the Apple-authorized package in this procedure.
-
 ## 3. Replace without uninstalling
 
 ```sh
@@ -59,16 +57,8 @@ Despite its name, `upgrade` performed our in-place downgrade. Wait for `InstallC
 
 ## 4. Connect and download game data
 
-Return to [Quick start](README.en.md#quick-start): prepare local media, create/import one account, and start the server. Disable other/exporter tunnels. Enable only this server's WireGuard profile, install its certificate, and enable **full trust for the exact certificate shown in setup**. Different certificates can share the name “mitmproxy.” Reuse an earlier working local CA with:
+Return to the [quickstart](README.en.md#quick-start) in the extracted server folder. Prepare the data, start the server, and follow its WireGuard and certificate instructions. **Try normal title-screen login first**: the server attempts to recover the official account remembered by the client. If it does not appear, follow the README's manual recovery options. A client without saved login information starts with a local starter.
 
-```sh
-uv run --locked python server.py start --ca-dir "/path/to/old/private/mitmproxy"
-```
+Allow downloads from the running local server. The IPA alone does not contain all songs, voices or MVs. Keep the computer awake and both devices on the same Wi-Fi, then test home → song → results → restart.
 
-Keep that directory local; never distribute its private key. A clean client can register into the local starter save automatically. If an old token remains or you are importing an account, enter `private/linking-credentials.txt` at **Menu → データ連携 → 連携パスワード入力**. These are local credentials, separate from Apple and official-game credentials.
-
-Allow downloads from the running local server. The IPA alone does not contain all songs/voices/MVs. Keep the computer awake and both devices on the same Wi-Fi. Test home → song → results → restart on your own setup.
-
-For reroll, claim available starter presents and check the required ticket. Rates are preservation approximations. Development also used a test ticket grant; do not assume every account starts with two tickets.
-
-For HE01-001-APP100, check the server and WireGuard endpoint's current LAN IP. For gacha hanging after login, check certificate identity and terminal TLS errors before clearing game data. If the title still says 3.0.0, the compatible version has not been installed.
+If the title still says 3.0.0, the replacement did not complete. For connection errors or screens that hang, follow [troubleshooting](README.en.md#troubleshooting); do not uninstall or clear game data as a first response.

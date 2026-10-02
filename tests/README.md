@@ -1,4 +1,4 @@
-# Verification
+# Developer verification
 
 Run from the repository root: `uv run --locked python -m unittest discover -s tests -v`.
 
@@ -45,3 +45,5 @@ reporting. Existing downloader tests cover interrupted/corrupt files and checksu
 failures. `check_supplement_serving.py` checks all 1,133 pinned resources over HTTP on
 localhost:8125, plus missing-static-file 404 behavior; run only on your prepared local
 server with the supplement installed. It reads files and does not mutate account data.
+
+[Story resource audit](STORY_COVERAGE.md) records download coverage; it is not a player setup guide.

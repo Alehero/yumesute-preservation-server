@@ -6,8 +6,7 @@ An unofficial local server for preserved **World Dai Star: Yume no Stellarium** 
 
 **Read first: this does not restore the official service or provide the game app. An account ZIP alone is not enough.** You need a compatible installed client, master data, and the media needed by that client. This repository does not distribute an IPA/APK, game media, or anyone's account.
 
-- Reference device: existing **iOS 2.31.3 client (build 2.31.3.425)**, M1 iPad Pro, iPadOS 26.6.1, macOS 26.2.
-- **Compatibility with 3.0.0 is not guaranteed.** Use 2.31.3; see the [rollback guide](IOS-ROLLBACK.en.md) for installation and compatibility details. Do not delete or update a working older client.
+- **3.0.0 is unsupported.** Use 2.31.3; see the [rollback guide](IOS-ROLLBACK.en.md) for installation and compatibility details. Do not delete or update a working older client.
 - Home, solo play, results surviving restart, and several progression features were device-confirmed in the development setup. This is distinct from device-testing the entire release installer.
 - This is an early **personal, home-LAN** package, not a public multi-user hosting service. Each installation supports one recovered official identity alongside its retained starter save. Windows instructions are provided but are not device-tested.
 
@@ -17,7 +16,7 @@ An unofficial local server for preserved **World Dai Star: Yume no Stellarium** 
 2. Mac or Windows PC on the same Wi-Fi. No USB cable is required for play; the optional iOS rollback procedure needs one.
 3. [uv](https://docs.astral.sh/uv/getting-started/installation/), [Git](https://git-scm.com/downloads), and running [Docker Desktop](https://docs.docker.com/desktop/) for PostgreSQL. Existing PostgreSQL users can follow [DATA.md](DATA.md).
 4. The official [WireGuard app](https://www.wireguard.com/install/) on the device.
-5. A local game-data folder arranged as described in [DATA.md](DATA.md). **It is not included in an account-export ZIP.** You can try the official-CDN downloader below while those files remain available. Having media cached on an iPad does not automatically make it exportable to the PC.
+5. Roughly **45 GB of free space** for game data. The commands below download it while the official CDN remains available. If you already have a data folder, see [DATA.md](DATA.md).
 6. Optional: an existing account-export ZIP, or your official linking ID/password. Automatic recovery can retrieve your save while the official authentication and account-data endpoints remain available; an exporter is not required for that path.
 
 ## Quick start
@@ -30,7 +29,7 @@ Use **2.31.3 (build 2.31.3.425)**. If you accidentally updated to 3.0.0, follow 
 
 ### 1. Prepare data and start the database
 
-For a new setup, download the reference iOS data directly from the official CDN:
+Run these commands **one at a time**. If one fails, resolve it before continuing. For a new setup, download the reference iOS data directly from the official CDN:
 
 ```sh
 uv run --locked python download_data.py
@@ -44,43 +43,7 @@ The downloader does not need an official game login. It downloads the game data 
 
 If you already have local game data, skip downloading and use `uv run --locked python server.py prepare --data-dir "/path/to/game-data"`, then start the database. A Windows path can be `"C:\Users\You\Documents\game-data"`. Preparation generates per-installation secrets and copies supplied files without changing the originals.
 
-### Existing installation: add banners and help resources
-
-After updating the server code, stop the server and run:
-
-```sh
-uv run --locked python download_data.py --supplemental-only --output data
-uv run --locked python server.py install-supplement --data-dir data
-```
-
-Then start the server normally. This downloads **1,132 pinned static resources plus
-`help.bin` (about 50 MB)**, without downloading bundles again. It includes all 826
-archived BannerMaster paths and all 30 help-index images. The installer validates the
-complete supplement before copying files and does not touch accounts or configuration.
-Do not rerun `prepare` on an existing installation. A download failure is listed in
-`data/download-report.jsonl`; rerun to retry. Availability is not guaranteed.
-
-Fresh setups include these resources in the normal download/prepare commands.
-The complete supplement was downloaded into an empty folder and verified over local
-HTTP on October 1, 2026; in-game help rendering remains unverified. This is known
-resource coverage, not proof that every historical asset or event is supported.
-
-### 2. Recover your account automatically
-
-**Try normal login first—no account ZIP or manual import is needed.** After connecting
-in step 3, open the game and tap the title screen. The server uses the official login
-information already remembered by the client to attempt recovery. Once saved locally,
-your account loads from this server on subsequent logins.
-
-This requires the client to retain usable official login information and the official
-account-retrieval endpoints to remain available. If your account does not appear,
-use the manual recovery options below. A client with no saved login starts with a
-local starter account; it cannot identify an old official account automatically.
-
-All local accounts receive a one-time **10,000 song-ticket (歌劇目録)** gift.
-Claim **楽曲解放サポート** from Presents. Normal song/chart unlock conditions still apply.
-
-### 3. Start and connect the device
+### 2. Start and connect the device
 
 ```sh
 uv run --locked python server.py start
@@ -92,18 +55,30 @@ A setup page opens in your browser. If it does not, open `private/setup.html`.
 2. In WireGuard, choose **Add a Tunnel → Create from QR code**, scan the setup-page QR, and turn it on. The QR contains a private key: do not share it.
 3. Open the displayed certificate URL in device Safari.
 4. Install the downloaded profile under **Settings → General → VPN & Device Management**.
-5. Match the certificate name/fingerprint shown in setup; another “mitmproxy” profile may have a different key. Reuse a working local store with `server.py start --ca-dir "/path/to/old/private/mitmproxy"` (saved for future starts). Enable **full trust** under **General → About → Certificate Trust Settings**. Installing the profile alone is insufficient.
-6. Fully close and reopen the game and enter from the title screen. Known local accounts load locally. An unrecognized official login token triggers an attempt to recover your official save.
-7. **Only if automatic recovery did not restore your account**, choose **title Menu → データ連携 → 連携パスワード入力** and enter your **official linking ID and password**. Check the displayed account name. To select this installation's original starter or manually imported save instead, use the **local** credentials in `private/linking-credentials.txt`. Apple sign-in recovery is not implemented. Linking changes the account selected on the receiving device.
-8. Test **home → solo play → results → app restart**, checking that progress persists.
+5. Match the certificate name/fingerprint shown in setup; another “mitmproxy” profile may have a different key. Enable **full trust** under **General → About → Certificate Trust Settings**. Installing the profile alone is insufficient.
+### 3. Log in and claim song tickets
 
-**Recovery behavior:** a successful official fetch is saved transactionally; future logins with recognized credentials use the local copy without contacting the official server. Incorrect credentials return an error. If the official service is unavailable before any official save has been recovered, the server selects its existing starter without resetting it; that credential then stays linked locally. After recovery, an unknown credential during an outage returns an error rather than selecting a starter. Malformed responses and unrecognized errors never cause fallback. Set `official_account_recovery` to `false` in `preservation-rules.json` to disable official requests; known local accounts still work. See [recovery and backups](DATA.md#automatic-account-recovery--アカウントの自動復元).
+**Try normal login first—no account ZIP or manual import is needed.** After connecting, fully close and reopen the game and tap the title screen. The server uses the official login
+information already remembered by the client to attempt recovery. Once saved locally,
+your account loads from this server on subsequent logins.
 
-A clean client with no token uses the local starter. Registration reuses that save without resetting progress; it does not create a separate save per device. API checks cover registration, but clean-client name entry remains unverified. Official recovery retrieves account state, not the app or media. Its initial availability is not guaranteed; back up the recovered database and configuration.
+This requires the client to retain usable official login information and the official
+account-retrieval endpoints to remain available. If your account does not appear,
+use the manual recovery options below. A client with no saved login starts with a
+local starter account; it cannot identify an old official account automatically.
 
-Keep the computer awake and terminal open. To stop: **turn WireGuard off, then press Control+C**. Stop PostgreSQL with `docker compose stop`. Next time, run `docker compose up -d --wait db` and `server.py start`. Do not re-import your account each session.
+All local accounts receive a one-time **10,000 song-ticket (歌劇目録)** gift.
+Claim **楽曲解放サポート** from Presents. Normal song/chart unlock conditions still apply.
+
+Once recovered, recognized logins use your local save even if the official service closes. If recovery is unavailable before any official account has been saved, login may select the local starter. Use manual recovery below if this happens; do not delete the starter or repeat setup. See [recovery details and backups](DATA.md#automatic-account-recovery--アカウントの自動復元).
+
+Check that progress persists through **home → solo play → results → app restart**.
+
+Keep the computer awake and terminal open. To stop: **turn WireGuard off, then press Control+C**. Stop PostgreSQL with `docker compose stop`. Next time, run `docker compose up -d --wait db` and `uv run --locked python server.py start`. Do not re-import your account each session.
 
 ## Manual recovery if automatic login did not restore your account
+
+**Only if automatic recovery did not restore your account**, choose **title Menu → データ連携 → 連携パスワード入力** and enter your **official linking ID and password**. Check the displayed account name. To select this installation's original starter or manually imported save instead, use the **local** credentials in `private/linking-credentials.txt`. Apple sign-in recovery is not implemented. Linking changes the account selected on the receiving device.
 
 If in-game Data Link is unsuccessful or you want a backup before importing, use the browser recovery page.
 
@@ -141,9 +116,9 @@ an account; do not delete a working save to make room for it.
 ## Troubleshooting
 
 - **Stopped connecting after sleep or a Wi-Fi change:** follow the recovery steps below; the computer may have received a different LAN IP address.
-- **Port conflict:** defaults are backend TCP 8125 (loopback), WireGuard UDP 51822, certificate TCP 8766, and PostgreSQL TCP 55433 (loopback). Use `start --port 8126 --wg-port 51823 --cert-port 8767`. Change DB port in both `.env` and `vendor/server-of-dreams/config.yml` before initialization.
+- **Port conflict:** defaults are backend TCP 8125 (loopback), WireGuard UDP 51822, certificate TCP 8766, and PostgreSQL TCP 55433 (loopback). Use `uv run --locked python server.py start --port 8126 --wg-port 51823 --cert-port 8767`. Change DB port in both `.env` and `vendor/server-of-dreams/config.yml` before initialization.
 - **Certificate/tunnel failure:** check same LAN, guest-network isolation, computer firewall, and full certificate trust. Allow only the required traffic on your home network. Internet port forwarding is unnecessary.
-- **Missing images/songs or HTTP 404:** check `doctor` and `logs/backend.log`. Rerun the downloader for covered files, then copy recovered files into the matching server paths in DATA.md. Do not rerun prepare after configuring an account; it intentionally refuses that. Other missing media must be supplied locally. File counts are not proof of completeness. Do not clear the app cache to troubleshoot this.
+- **Missing images/songs or HTTP 404:** check `uv run --locked python server.py doctor` and `logs/backend.log`. Rerun the downloader for covered files, then copy recovered files into the matching server paths in DATA.md. Do not rerun prepare after configuring an account; it intentionally refuses that. Other missing media must be supplied locally. File counts are not proof of completeness. Do not clear the app cache to troubleshoot this.
 - **EOS after linking on 3.0.0:** use the compatible client version described in the [rollback guide](IOS-ROLLBACK.en.md).
 - **Database connection failure:** check Docker Desktop and `docker compose ps`. Changing `.env` does not change a password inside an existing database volume. Do not casually delete the volume.
 
@@ -193,14 +168,6 @@ need to turn private addressing off on every network or change the phone/iPad’
 to match the server. Changing the Mac’s Wi-Fi identity may itself require reconnecting
 and updating the reservation/Endpoint once.
 
-## Development and attribution
-
-Backend: [server-of-dreams](https://github.com/UnknownSekai/server-of-dreams), pinned at `3cfca23267fb0f79d7336732db768e1510f20313`. Protocol reference: [OpenSiriusServer](https://github.com/TeamOpenSirius/OpenSiriusServer), `536004f17e174e2190d247edad2622ca2133b181`. These two backends have not been merged.
-
-Server extensions are GPL-3.0. Exporter-derived code retains its MIT notice. See [THIRD_PARTY.md](THIRD_PARTY.md). This community project is unaffiliated with the game's operators or rights holders.
-
-Run the self-contained tests with `uv run --locked python -m unittest discover -s tests -v` (38 tests). `tests/check_running.py` additionally checks a running local test installation on port 8125 and reads its private linking credentials without printing them. Do not run it against someone else's server.
-
 ### Certificate identity and reuse
 
 Each installation normally keeps its CA in `private/mitmproxy`. Preserve this
@@ -218,9 +185,25 @@ The directory choice is remembered for later starts. Keep it available locally;
 never upload or distribute its private keys. Fresh stores receive a distinct
 `Yumesute Local …` name. Existing certificates are never silently replaced.
 Enable full trust for the exact certificate shown in setup, then fully restart
-the game. If login works but gacha hangs, check terminal TLS errors and certificate
-identity before clearing game data. Reusing the working CA resolved this symptom
-in our device test; the game's internal certificate-validation behavior remains
-unconfirmed.
+the game. If a screen hangs, check terminal TLS errors and the certificate identity.
 
-Starter accounts include 「錆びついた胸に一雫の心を」 with STELLA and OLIVIER I unlocked, so a device remembering those difficulties has a selectable chart. This preservation fallback also applies to existing local starter saves; imported accounts retain their progression.
+### Missing banners or help pages
+
+New setups already include these files. For an existing installation, stop the server and run:
+
+```sh
+uv run --locked python download_data.py --supplemental-only --output data
+uv run --locked python server.py install-supplement --data-dir data
+```
+
+Restart the server afterward. This repairs the known banner/help supplement (about 50 MB), without changing accounts or configuration. Verified downloads are skipped; failures appear in `data/download-report.jsonl` and can be retried with the same commands. Do not rerun `prepare` on an existing account.
+
+For missing songs or other media, follow [the data recovery instructions](DATA.md#official-cdn-download--公式cdnからの取得). The downloader checks its output folder, **not the installed server copy**; downloading alone does not install repaired files.
+
+## Development and attribution
+
+Backend: [server-of-dreams](https://github.com/UnknownSekai/server-of-dreams), pinned at `3cfca23267fb0f79d7336732db768e1510f20313`. Protocol reference: [OpenSiriusServer](https://github.com/TeamOpenSirius/OpenSiriusServer), `536004f17e174e2190d247edad2622ca2133b181`. These two backends have not been merged.
+
+Server extensions are GPL-3.0. Exporter-derived code retains its MIT notice. See [THIRD_PARTY.md](THIRD_PARTY.md). This community project is unaffiliated with the game's operators or rights holders.
+
+[Developer verification instructions](tests/README.md).

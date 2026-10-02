@@ -11,6 +11,19 @@ pinned to `3cfca23267fb0f79d7336732db768e1510f20313`.
 [TeamOpenSirius/OpenSiriusServer](https://github.com/TeamOpenSirius/OpenSiriusServer)
 was an independent protocol reference, not a second backend merged into this release.
 
+## October 2, 2026 — Shorter player setup guides
+
+- Japanese/English setup now follows preparation → connection → normal login, with
+  banner/help repairs under troubleshooting and complete copyable recovery commands.
+- Rollback guidance now uses automatic account recovery first; removed development-only
+  ticket grants, code-inspection detours and unrelated test history from that procedure.
+- Removed one-off reward examples and archival bookkeeping from the data reference;
+  detailed story coverage is now a developer audit under `tests/`.
+- Clarified that downloader retries verify the download folder, not installed copies,
+  and that commands should be run individually so failures are resolved before proceeding.
+- Documentation reviewed against existing commands; no runtime changes or new device
+  verification. Feature inventory remains 30; backend remains the pinned server-of-dreams.
+
 ## October 2, 2026 — Simpler setup and account-recovery guidance
 
 - Japanese/English quickstarts now put automatic recovery from the device's remembered

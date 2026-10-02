@@ -89,19 +89,15 @@ For an already configured account, do not rerun `prepare`. Stop the local server
 
 ## Existing PostgreSQL / 既存のPostgreSQLを利用する場合
 
-Run `prepare`, then edit **only this release folder's** `vendor/server-of-dreams/config.yml` database section to reference a dedicated empty database you own. PostgreSQL 17 is the reference version. Provide host, port, database, username, password. Do not point this at an existing live game database. Skip Docker commands, then run import or fresh creation. The command creates tables and refuses to overwrite accounts. Keep the generated JWT secret stable: changing it invalidates local login tokens.
+Run `prepare`, then edit **only this release folder's** `vendor/server-of-dreams/config.yml` database section to reference a dedicated empty database you own. PostgreSQL 17 is the reference version. Provide host, port, database, username, password. Do not point this at an existing live game database. Skip Docker commands, then continue with `uv run --locked python server.py start`; it creates the starter automatically. The command creates tables and refuses to overwrite accounts. Keep the generated JWT secret stable: changing it invalidates local login tokens.
 
-`prepare` 後、**今回の配布フォルダー内の** `vendor/server-of-dreams/config.yml` のdatabase項目を編集し、専用の空のDBを指定します。基準はPostgreSQL 17です。既存の稼働中ゲームDBを指定しないでください。Dockerのコマンドを省略し、インポートまたは新規作成へ進みます。テーブルは自動作成され、アカウント上書きは拒否されます。JWT秘密鍵を変更するとローカルログイントークンが無効になるため、保持してください。
+`prepare` 後、**今回の配布フォルダー内の** `vendor/server-of-dreams/config.yml` のdatabase項目を編集し、専用の空のDBを指定します。基準はPostgreSQL 17です。既存の稼働中ゲームDBを指定しないでください。Dockerのコマンドを省略し、`uv run --locked python server.py start` へ進みます。初期セーブは自動作成されます。テーブルは自動作成され、アカウント上書きは拒否されます。JWT秘密鍵を変更するとローカルログイントークンが無効になるため、保持してください。
 
-## Fresh-account resources and story rewards / 新規リソースとシナリオ報酬
+## Song-ticket gift settings / 楽曲チケットの設定
 
 Fresh creation retains the upstream starter seed. The default direct allowance (`fresh_song_tickets`) is now 0. Both fresh and imported accounts receive the permanent **楽曲解放サポート** inbox gift: 10,000 歌劇目録, once per account, without expiry. `preservation_song_tickets` configures new issuance; changing it does not rewrite an existing gift. Previously granted inventory is retained, and those accounts are eligible too. The issuance ledger survives claimed-inbox cleanup. Claiming is transactional and repeated/concurrent claims do not duplicate rewards. This is a local preservation policy, not an official event. Song exchange costs 10 tickets and chart exchange costs 1, subject to unlock conditions.
 
 新規・インポート済みアカウントの両方に「楽曲解放サポート」（歌劇目録10,000個）を1回、期限なしで付与します。受取操作が必要です。初期所持への直接付与は既定で0になりました。既に受け取った初期所持分は減らしません。数量設定は新規付与にのみ反映し、受取済みプレゼントを整理しても再発行しません。公式イベントではなく保存用の設定です。
-
-Story read rewards are implemented from master reward packages. Backend/database checks confirm first-read rewards, the main-story full-read bonus, reading fully after skipping, and no repeated grants. Locked card side stories are rejected; an unlocked side story grants its read reward once and updates character reading progress. For the tested main episode 1010101, read/skip grants 50 free jewels, 1 歌劇目録 and 30 pieces of item 141001; full reading grants one additional 歌劇目録. These examples are not universal rewards for every story. Chapter-completion reward parity and all story categories are not certified by these checks. No new device playback test was performed.
-
-シナリオの読了報酬はマスターの報酬設定から付与します。バックエンドとDBで、初回報酬、メインストーリーの全文読了ボーナス、スキップ後の全文読了、再読時の重複付与防止を確認しました。未解放のカードサイドストーリーは拒否し、解放済みでは報酬と読了進行を保存します。確認したメイン1010101は読了／スキップで無償ジュエル50、歌劇目録1、アイテム141001を30個、全文読了でさらに歌劇目録1を付与します。全話共通の報酬ではありません。この確認だけで章完了報酬の完全一致や全カテゴリの動作を保証するものではなく、今回の実機再生確認は行っていません。
 
 ## Backup / バックアップ
 
@@ -123,9 +119,9 @@ Restore first into a separate installation/database, using the same source revis
 
 ## Verification boundaries / 検証範囲
 
-Release checks use disposable databases: exporter ZIP validation/import, fresh starter creation, wrong-password rejection, linking/authentication, account-data serialization, master serving and missing-asset behavior. Automated success does not certify fresh-client onboarding or every gameplay feature. Docker Compose and Windows are documented paths; this Mac's validation uses an existing local PostgreSQL 17 instance. See CHANGELOG for final results.
+Release checks use disposable databases: exporter ZIP validation/import, fresh starter creation, wrong-password rejection, linking/authentication, account-data serialization, master serving and missing-asset behavior. Automated success does not certify fresh-client onboarding or every gameplay feature. Docker Compose and Windows are documented paths; the tested setup uses an existing local PostgreSQL 17 instance. See CHANGELOG for final results.
 
-配布用の検証では専用の使い捨てDBを使用します。ZIP検証・インポート、新規初期データ作成、誤パスワードの拒否、連携・認証、アカウントデータ、マスター配信、素材不足時の動作を確認します。自動テスト成功は新規端末の導入や全機能の実機動作を保証しません。このMacでは既存のPostgreSQL 17を利用して検証しており、Docker ComposeおよびWindowsの手順自体は未検証です。結果はCHANGELOGに記録します。
+配布用の検証では専用の使い捨てDBを使用します。ZIP検証・インポート、新規初期データ作成、誤パスワードの拒否、連携・認証、アカウントデータ、マスター配信、素材不足時の動作を確認します。自動テスト成功は新規端末の導入や全機能の実機動作を保証しません。確認済みの環境では既存のPostgreSQL 17を利用して検証しており、Docker ComposeおよびWindowsの手順自体は未検証です。結果はCHANGELOGに記録します。
 
 ## Automatic account recovery / アカウントの自動復元
 
@@ -175,42 +171,9 @@ DBのバックアップに加えて `jwt_secret` を含む設定と `private/` �
 
 ## Pinned static resources and help / バナー・ヘルプの補完
 
-`resource-supplement.json` contains public CDN paths, byte sizes and SHA256 hashes;
-it contains no game payloads or account credentials. It covers 1,132 distinct verified
-static URLs plus `/master-data/production/help.bin`, totaling 49,943,880 bytes.
-The earlier archival count of 1,104 was newly downloaded files; 28 were already saved.
-Coverage includes all 826 distinct archived BannerMaster image paths and 30 help-index
-images. Additional successfully archived paths are included, but unverified guesses
-and 404 probes are excluded. This is not a canonical inventory of all historical media.
+For missing banners/help, use the [troubleshooting repair commands](README.en.md#missing-banners-or-help-pages). Normal first-time download and preparation already include these resources. The installer validates all supplemental inputs before copying, replaces each destination file atomically, and leaves accounts and configuration unchanged. If interrupted during copying, rerun it. Download availability is not guaranteed; see [CHANGELOG](CHANGELOG.md) for coverage and verification history.
 
-The normal downloader includes this supplement; `--supplemental-only` downloads just
-these 1,133 files. All use pinned checksums, existing-file verification and atomic
-replacement. The original downloader's retry, failed-file reporting and partial-file
-cleanup also apply. Reruns retry missing or corrupted files. Do not interpret a limited
-or metadata-only run as a completed download. The full download plan now has 37,487
-unique files; the full 45-GB-scale download has not been rerun in this batch.
-
-For prepared installations, `server.py install-supplement --data-dir data` validates
-all supplemental inputs before writing any of them, then atomically replaces each
-individual destination file. It copies static resources to `private/static-assets/`
-and help metadata to `private/upstream/help.bin`. It neither changes account selection
-nor touches the database/configuration. Stop the server before installing and restart
-afterward; a filesystem interruption can leave a partial set, so rerun the installer.
-Fresh `prepare` copies available verified supplemental resources from the data folder.
-Missing help metadata returns a local 404; it is never redirected to the official CDN.
-The existing static-resource route likewise returns 404 for unavailable files.
-
-追加リストには公開配信先・サイズ・SHA256のみを収録し、素材本体やアカウント情報は含めません。
-以前の「1,104件」は新規取得分で、保存済み28件と合わせた静的素材は1,132件です。
-さらにヘルプ目次を加えた1,133件、計49,943,880バイトを対象にしています。
-マスター参照のバナー826件とヘルプ画像30件を含みますが、過去の全素材一覧ではありません。
-
-通常の取得にも含まれ、`--supplemental-only` では追加分だけを取得できます。
-既存環境では停止後に `server.py install-supplement --data-dir data` を実行してください。
-全入力を検証してからファイル単位で置き換え、アカウント・DB・設定は変更しません。
-コピー中に中断した場合は再実行できます。ヘルプや画像が不足する場合はローカルで404を返します。
-実機のキャッシュによる成功と区別するため、空フォルダーへの取得と全件のHTTP配信を検証しました。
-ゲーム内でのヘルプ表示と完全な新規環境の構築は別途確認が必要です。
+バナー・ヘルプの不足には[困ったときの補完手順](README.md#バナーやヘルプが表示されない場合)を使ってください。通常の初回取得・準備には含まれています。全入力の検証後にファイル単位で置き換え、アカウント・設定は変更しません。コピー中に中断した場合は再実行できます。配信継続は保証できません。収録範囲と検証履歴は[CHANGELOG](CHANGELOG.md)を参照してください。
 
 ## Restore an existing export ZIP / 保存済みZIPの復元
 
