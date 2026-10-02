@@ -11,6 +11,32 @@ pinned to `3cfca23267fb0f79d7336732db768e1510f20313`.
 [TeamOpenSirius/OpenSiriusServer](https://github.com/TeamOpenSirius/OpenSiriusServer)
 was an independent protocol reference, not a second backend merged into this release.
 
+## October 2, 2026 — Recoverable setup, startup, repairs and backups
+
+- Added `server.py setup` to check prerequisites, reuse verified downloads, prepare a
+  new installation, start its database and launch the server. Existing configured saves
+  skip download/preparation and are reused. Failed downloads stop by default;
+  `--allow-missing` explicitly accepts incomplete media, not complete preservation.
+- Everyday `start` and the Mac/Windows launchers now start the matching Compose database
+  when needed, reuse running external PostgreSQL, remember custom ports and detect the
+  current LAN IP. Device WireGuard endpoints still need updating if that IP changes.
+- Added `repair-data` to verify and repair installed media as well as downloaded copies,
+  without replacing accounts, secrets or master-data versions. Stop the server first;
+  reruns resume at file boundaries. CDN files that no longer exist remain unavailable.
+- Added private ZIP backups of PostgreSQL, prepared source/configuration, account files,
+  photos, keys and installed assets, including a copied external CA store when selected.
+  Archives are hash-verified before publication; failures do not publish a completed ZIP
+  or overwrite older backups. Duplicate downloads, logs and software environments are
+  excluded. Restore into a separate database using the DATA.md instructions.
+- **Automated:** 49 unit tests passed, including new operation-lock, account-preservation,
+  corruption/interruption, database-start and backup integrity/failure checks.
+- **Integration:** a temporary isolated PostgreSQL instance produced a real backup,
+  restored its dump into a separate database, and retained the test score.
+- **Not yet device-confirmed:** the new complete setup flow, full-size backups/restores,
+  Windows execution and Docker end-to-end setup. Existing gameplay behavior is unchanged.
+  The inventory remains 30 gameplay feature groups; this batch improves setup tooling.
+  Backend credit remains the pinned UnknownSekai/server-of-dreams.
+
 ## October 2, 2026 — Shorter player setup guides
 
 - Japanese/English setup now follows preparation → connection → normal login, with

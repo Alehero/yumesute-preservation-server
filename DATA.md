@@ -83,9 +83,22 @@ The output matches the folder layout above. `prepare --data-dir data` copies it 
 
 出力先は上記の構成になり、`prepare --data-dir data` で配布環境にコピーします。両方を保存する容量（空き約45 GBが目安）が必要です。全バナー・シナリオ・ログイン／イベント応答・アプリ本体の取得を保証するものではありません。アカウントZIPもアカウントの状態のみです。公式CDNで取得できることは再配布の許可を意味しません。本リポジトリに含めるのは取得用コードと識別情報で、素材そのものではありません。
 
-For an already configured account, do not rerun `prepare`. Stop the local server, rerun the downloader, and copy recovered `data/assets/` files into `vendor/server-of-dreams/_data/assets/`, and `data/static-assets/` into `private/static-assets/`, preserving relative paths. Keep the existing account/configuration files. Restart afterward. Do not clear your device cache as a test.
+For an existing installation, stop the game server and run `uv run --locked python server.py repair-data --data-dir data`. It verifies downloaded media, repairs installed copies, and leaves accounts/configuration alone. Failures stop installation unless `--allow-missing` is explicitly selected; unavailable files remain in the download report. It does not migrate master-data versions. Do not rerun `prepare` or clear device caches to repair media.
 
-アカウント設定後は `prepare` を再実行しないでください。ローカルサーバーを停止し、取得ツールを再実行して、取得できた `data/assets/` 内のファイルを `vendor/server-of-dreams/_data/assets/` へ、`data/static-assets/` 内を `private/static-assets/` へ、相対パスを保ってコピーします。アカウント・設定ファイルはそのままにし、その後再起動してください。テストのために端末のキャッシュを削除しないでください。
+導入済み環境ではサーバーを止め、`uv run --locked python server.py repair-data --data-dir data` を実行します。取得ファイルの検証と配置済みコピーの修復を行い、アカウント・設定は変更しません。取得失敗時は停止し、`--allow-missing` を指定した場合のみ不足を了承して配置します。マスターの別バージョンへの移行は対象外です。`prepare` の再実行や端末キャッシュの削除は不要です。
+
+## Individual setup commands / 個別のセットアップコマンド
+
+`setup` runs these stages for a new installation. They remain available individually for troubleshooting. Run them one at a time and resolve failures before continuing. `start` automatically creates a starter only when no account is configured. Existing accounts are never reset.
+
+`setup` は新規環境で次の処理を順に行います。問題の切り分けには個別でも使えます。1行ずつ実行し、失敗は先に解消してください。`start` は未設定の場合のみ初期セーブを作成し、既存アカウントはリセットしません。
+
+```sh
+uv run --locked python download_data.py --output data
+uv run --locked python server.py prepare --data-dir data
+docker compose up -d --wait db
+uv run --locked python server.py start
+```
 
 ## Existing PostgreSQL / 既存のPostgreSQLを利用する場合
 
@@ -101,21 +114,34 @@ Fresh creation retains the upstream starter seed. The default direct allowance (
 
 ## Backup / バックアップ
 
-Stop the game and the server terminal first. Keep PostgreSQL running while making its dump:
-ゲームとサーバーを止め、PostgreSQLを起動した状態で実行します。
+Stop the game and server (Control+C), leaving PostgreSQL running, then run:
+ゲームとサーバーを停止し（Control+C）、PostgreSQLを起動したまま実行します。
 
 ```sh
-docker compose exec db pg_dump -U yumesute -d yumesute -Fc -f /tmp/yumesute-save.dump
-docker compose cp db:/tmp/yumesute-save.dump ./yumesute-save.dump
+uv run --locked python server.py backup --output backups/my-save-2026-10-02.zip
 ```
 
-Move the dump into a private backup folder immediately; it contains account data. Also back up `private/`, `.env`, `vendor/server-of-dreams/config.yml`, `preservation-rules.json`, and your local game-data files. The dump alone does not include photos stored on disk, login-association files, signing secrets, or assets. Keep the original exporter ZIP separately. The Docker volume persists across `docker compose stop` and `down`; **`docker compose down -v` deletes that volume**. Do not use it on saves you want to keep.
+Choose a new filename each time. The archive contains a PostgreSQL dump, prepared server source/configuration, private account files, photos, keys and **installed game assets**. It copies a selected external CA store into `installation/private/backup-ca`. It excludes duplicate `data/` downloads, logs, virtual environments and previous backups; this can still be a large archive. It verifies the archived file hashes before publishing the final ZIP, and refuses to overwrite an existing archive. A failed backup leaves no completed ZIP. External PostgreSQL requires `pg_dump`; the standard Docker installation can use the container's copy.
 
-ダンプにはアカウント情報が入るため、直後に非公開のバックアップ先へ移動してください。`private/`、`.env`、`vendor/server-of-dreams/config.yml`、`preservation-rules.json`、ゲームデータも一緒に保存します。DBダンプだけでは写真ファイル、ログインの対応付け、秘密鍵、素材は保存されません。元のアカウントZIPも別途保管してください。Dockerの `stop` や `down` ではDBボリュームは残りますが、**`docker compose down -v` はボリュームを削除します**。
+毎回新しいファイル名を指定してください。DBダンプ、準備済みサーバーのソース・設定、非公開アカウント情報、写真、鍵、**配置済みゲーム素材**を保存します。外部フォルダーの証明書を選択している場合は `installation/private/backup-ca` にコピーします。重複する `data/` の取得元、ログ、仮想環境、過去のバックアップは除外しますが、大容量になる場合があります。アーカイブ内のハッシュを検証してから完成ZIPを作成し、既存ZIPは上書きしません。失敗時に完成ZIPは残りません。独自のPostgreSQL環境では `pg_dump` が必要で、標準Docker環境ではコンテナー内のものを利用できます。
 
-Restore first into a separate installation/database, using the same source revision and backed-up config/private files. For an empty new Docker database, copy the dump into the container and use `pg_restore -U yumesute -d yumesute --no-owner /tmp/yumesute-save.dump`. Never restore over a working account as an initial test. Run `doctor` before reconnecting a device. The original export contains only the state when it was captured; importing it again is not a backup of later private-server progress.
+**Keep this archive private: it contains credentials and signing keys.** It is a server-installation backup, not an account-export ZIP; do not pass it to `import-account`. It does not include the iOS app or install system dependencies. Stop other tools that write to the database/files during backup. Move a copy to a separate disk after completion.
 
-復元テストは別のインストール・空のDBに対して行い、同じソース版と保存した設定・privateファイルを使います。空のDocker DBにはダンプをコピーし、コンテナー内で `pg_restore -U yumesute -d yumesute --no-owner /tmp/yumesute-save.dump` を実行します。稼働中のアカウントへの上書きで試さないでください。端末を接続する前に `doctor` を実行します。元のZIPは取得時点の状態であり、その後のローカル進行は含みません。
+**認証情報と秘密鍵を含むため、公開しないでください。** アカウント保存ツールのZIPとは形式が異なり、`import-account` には渡せません。iOSアプリやOS側の依存ソフトは含みません。バックアップ中はDB・ファイルを書き換える別のツールも停止し、完了後は別のディスクにもコピーを保管してください。
+
+### Restore safely / 安全な復元
+
+1. Extract into a **separate folder** and use its `installation/` as the server folder. Keep the working installation untouched. Install uv/Git/Docker as needed.
+2. Use a separate empty PostgreSQL database. For Docker, use a distinct Compose project (`docker compose -p yumesute-restore ...` for **every** Docker command), and set an unused port in **both** `.env` and `vendor/server-of-dreams/config.yml` before starting it. Keep passwords and JWT secrets unchanged.
+3. Start that database, copy `database.dump` into it with `docker compose -p yumesute-restore cp /path/to/database.dump db:/tmp/save.dump`, then restore with `docker compose -p yumesute-restore exec db pg_restore -U yumesute -d yumesute --no-owner --exit-on-error /tmp/save.dump`.
+4. If `private/certificate-store.json` references a previous absolute path, start with `--ca-dir` pointing to the restored `private/backup-ca` (external CA) or the restored original CA folder. Keep the same keys; don't generate replacements.
+5. Run `uv run --locked python server.py doctor`, then `uv run --locked python server.py start --no-docker`. Use its setup page to reconnect. The restore database must already be running under the chosen Compose project.
+
+別フォルダーへ展開し、`installation/` をサーバーフォルダーとして使います。動作中の環境はそのまま残してください。復元先には専用の空DBを用意します。Dockerではすべてのコマンドに別プロジェクト名（例：`-p yumesute-restore`）を指定し、起動前に `.env` と `config.yml` の両方を未使用ポートへ変更します。パスワード・JWT秘密鍵は保持します。上記の `cp` と `pg_restore` でDBを復元し、証明書の保存先が古い絶対パスなら復元先の鍵を `--ca-dir` で指定します。`doctor` で確認後、DBを起動した状態で `start --no-docker` を使ってください。
+
+This restore procedure and full-size backups still need end-to-end validation on clean Mac/Windows installations. Automated checks cover archive integrity and failure handling. Never use `docker compose down -v` on a save you want to keep: it deletes the database volume. An old account export does not contain later private-server progress.
+
+新規Mac・Windows環境での一連の復元と大容量バックアップは引き続き確認が必要です。自動テストではアーカイブ整合性と失敗時の処理を確認しています。残したいセーブに `docker compose down -v` を使うとDBボリュームを削除するため使用しないでください。古いアカウントZIPには、その後のローカル進行は含まれません。
 
 ## Verification boundaries / 検証範囲
 
@@ -171,9 +197,17 @@ DBのバックアップに加えて `jwt_secret` を含む設定と `private/` �
 
 ## Pinned static resources and help / バナー・ヘルプの補完
 
-For missing banners/help, use the [troubleshooting repair commands](README.en.md#missing-banners-or-help-pages). Normal first-time download and preparation already include these resources. The installer validates all supplemental inputs before copying, replaces each destination file atomically, and leaves accounts and configuration unchanged. If interrupted during copying, rerun it. Download availability is not guaranteed; see [CHANGELOG](CHANGELOG.md) for coverage and verification history.
+For a smaller banner/help-only repair, stop the server and run:
+バナー・ヘルプのみを補完する場合は、サーバーを止めて実行します。
 
-バナー・ヘルプの不足には[困ったときの補完手順](README.md#バナーやヘルプが表示されない場合)を使ってください。通常の初回取得・準備には含まれています。全入力の検証後にファイル単位で置き換え、アカウント・設定は変更しません。コピー中に中断した場合は再実行できます。配信継続は保証できません。収録範囲と検証履歴は[CHANGELOG](CHANGELOG.md)を参照してください。
+```sh
+uv run --locked python download_data.py --supplemental-only --output data
+uv run --locked python server.py install-supplement --data-dir data
+```
+
+Restart afterward. Normal setup and full `repair-data` already include these files. Accounts and configuration are unchanged. Rerun after interruption. See [CHANGELOG](CHANGELOG.md) for coverage and verification history.
+
+完了後に再起動してください。通常の `setup` と全体の `repair-data` には含まれています。アカウント・設定は変更しません。中断時は再実行できます。収録範囲と検証履歴は[CHANGELOG](CHANGELOG.md)を参照してください。
 
 ## Restore an existing export ZIP / 保存済みZIPの復元
 

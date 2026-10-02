@@ -27,27 +27,36 @@ An unofficial local server for preserved **World Dai Star: Yume no Stellarium** 
 
 Use **2.31.3 (build 2.31.3.425)**. If you accidentally updated to 3.0.0, follow the [Mac/iOS rollback guide](IOS-ROLLBACK.en.md) first. It documents our verified in-place replacement and its limits. Keep an already-working older installation unchanged. USB is needed for rollback, not normal play.
 
-### 1. Prepare data and start the database
+### 1. Set up and start
 
-Run these commands **one at a time**. If one fails, resolve it before continuing. For a new setup, download the reference iOS data directly from the official CDN:
-
-```sh
-uv run --locked python download_data.py
-uv run --locked python server.py prepare --data-dir data
-docker compose up -d --wait db
-```
-
-The downloader does not need an official game login. It downloads the game data used by the server, including songs, MVs, stories, comics, banners, and help resources. Allow roughly **45 GB of free space** for the downloaded source plus the prepared copy; actual usage varies. Keep the computer awake. Rerun the same download command after interruption: completed files are checksum-checked and skipped; an interrupted file restarts from its beginning.
-
-**Availability was sampled on September 29, 2026; it is not guaranteed.** Read `data/download-report.jsonl` for failures. Some master-listed charts already returned 404 in the preservation capture. The command exits with code 2 if any media is missing; review the report before proceeding. A partial download may support some features, but is not a complete installation. This downloader does not supply the app, fix 3.0.0, or guarantee every story/banner. See [DATA.md](DATA.md) for data layout, backups, and advanced setup.
-
-If you already have local game data, skip downloading and use `uv run --locked python server.py prepare --data-dir "/path/to/game-data"`, then start the database. A Windows path can be `"C:\Users\You\Documents\game-data"`. Preparation generates per-installation secrets and copies supplied files without changing the originals.
-
-### 2. Start and connect the device
+Keep Docker Desktop running and the computer awake, then run:
 
 ```sh
-uv run --locked python server.py start
+uv run --locked python server.py setup
 ```
+
+This checks prerequisites, downloads the reference iOS data, prepares the server,
+starts PostgreSQL if needed, and launches the server. Interrupted downloads reuse
+verified files. Rerun the same command after fixing a failure; an existing configured
+account is reused, never recreated. Existing installations skip downloading and
+preparation—use `repair-data` below for missing files.
+
+Some CDN files may be unavailable. If downloading stops, read
+`data/download-report.jsonl` and retry. To explicitly accept the missing media and
+continue with a **partial installation**, rerun with `uv run --locked python server.py setup --allow-missing`.
+Missing media may prevent corresponding songs or screens from working. This does not
+provide the app or make 3.0.0 compatible.
+
+Already have a game-data folder? Use:
+
+```sh
+uv run --locked python server.py setup --data-dir "/path/to/game-data" --skip-download
+```
+
+On Windows a path can be `"C:\Users\You\Documents\game-data"`.
+[Existing PostgreSQL and individual setup commands](DATA.md) remain available.
+
+### 2. Connect the device
 
 A setup page opens in your browser. If it does not, open `private/setup.html`.
 
@@ -74,7 +83,23 @@ Once recovered, recognized logins use your local save even if the official servi
 
 Check that progress persists through **home → solo play → results → app restart**.
 
-Keep the computer awake and terminal open. To stop: **turn WireGuard off, then press Control+C**. Stop PostgreSQL with `docker compose stop`. Next time, run `docker compose up -d --wait db` and `uv run --locked python server.py start`. Do not re-import your account each session.
+### Relaunch after a restart
+
+Open Docker Desktop, then double-click **Start-Mac.command** or **Start-Windows.cmd**
+in the same server folder. Alternatively, run:
+
+```sh
+uv run --locked python server.py start
+```
+
+`start` reuses the installation, starts the matching Docker database if necessary,
+and detects the current LAN IP. It remembers custom server/tunnel/certificate ports.
+It does not download game data. If setup is incomplete, it reports what needs fixing.
+If the IP changed, update WireGuard's Endpoint as described under troubleshooting.
+
+Keep the computer awake and terminal open while playing. To stop, turn WireGuard off
+and press **Control+C**; optionally stop the database with `docker compose stop`.
+On Mac, if double-clicking the launcher is blocked, use the terminal command above.
 
 ## Manual recovery if automatic login did not restore your account
 
@@ -118,7 +143,7 @@ an account; do not delete a working save to make room for it.
 - **Stopped connecting after sleep or a Wi-Fi change:** follow the recovery steps below; the computer may have received a different LAN IP address.
 - **Port conflict:** defaults are backend TCP 8125 (loopback), WireGuard UDP 51822, certificate TCP 8766, and PostgreSQL TCP 55433 (loopback). Use `uv run --locked python server.py start --port 8126 --wg-port 51823 --cert-port 8767`. Change DB port in both `.env` and `vendor/server-of-dreams/config.yml` before initialization.
 - **Certificate/tunnel failure:** check same LAN, guest-network isolation, computer firewall, and full certificate trust. Allow only the required traffic on your home network. Internet port forwarding is unnecessary.
-- **Missing images/songs or HTTP 404:** check `uv run --locked python server.py doctor` and `logs/backend.log`. Rerun the downloader for covered files, then copy recovered files into the matching server paths in DATA.md. Do not rerun prepare after configuring an account; it intentionally refuses that. Other missing media must be supplied locally. File counts are not proof of completeness. Do not clear the app cache to troubleshoot this.
+- **Missing images/songs or HTTP 404:** check `uv run --locked python server.py doctor` and `logs/backend.log`. Use the repair command below for covered media; files unavailable from the CDN still need another local source. Do not clear the app cache to troubleshoot this.
 - **EOS after linking on 3.0.0:** use the compatible client version described in the [rollback guide](IOS-ROLLBACK.en.md).
 - **Database connection failure:** check Docker Desktop and `docker compose ps`. Changing `.env` does not change a password inside an existing database volume. Do not casually delete the volume.
 
@@ -187,18 +212,21 @@ never upload or distribute its private keys. Fresh stores receive a distinct
 Enable full trust for the exact certificate shown in setup, then fully restart
 the game. If a screen hangs, check terminal TLS errors and the certificate identity.
 
-### Missing banners or help pages
+### Missing images, songs or help pages
 
-New setups already include these files. For an existing installation, stop the server and run:
+Stop the game server (Control+C), then run:
 
 ```sh
-uv run --locked python download_data.py --supplemental-only --output data
-uv run --locked python server.py install-supplement --data-dir data
+uv run --locked python server.py repair-data
 ```
 
-Restart the server afterward. This repairs the known banner/help supplement (about 50 MB), without changing accounts or configuration. Verified downloads are skipped; failures appear in `data/download-report.jsonl` and can be retried with the same commands. Do not rerun `prepare` on an existing account.
-
-For missing songs or other media, follow [the data recovery instructions](DATA.md#official-cdn-download--公式cdnからの取得). The downloader checks its output folder, **not the installed server copy**; downloading alone does not install repaired files.
+This rechecks/downloads covered files and repairs the **installed copies**, preserving
+accounts, configuration and keys. Verified files are reused. It can take time to check
+the full data set. Use `--data-dir "/path/to/game-data"` if you downloaded elsewhere.
+If some files remain unavailable, inspect `download-report.jsonl`; add `--allow-missing`
+only to install the verified files while accepting those gaps. Rerun after interruption,
+then restart with `uv run --locked python server.py start`. Do not clear the app cache.
+A smaller banner/help-only repair remains available in [DATA.md](DATA.md).
 
 ## Development and attribution
 

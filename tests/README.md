@@ -47,3 +47,11 @@ localhost:8125, plus missing-static-file 404 behavior; run only on your prepared
 server with the supplement installed. It reads files and does not mutate account data.
 
 [Story resource audit](STORY_COVERAGE.md) records download coverage; it is not a player setup guide.
+
+`test_lifecycle.py` uses isolated temporary folders and mocked service/download boundaries
+for setup reuse, exclusive operation locking, repair validation and interruption,
+Compose startup decisions, and backup publication/integrity. It does not contact the
+CDN or modify a real account. `uv run --locked python tests/check_backup_restore.py` creates an isolated temporary
+PostgreSQL cluster, verifies a real dump/restore and shuts it down afterward. It requires
+PostgreSQL tools including initdb and pg_ctl. Clean-device, Windows and full-size backup
+validation remain open.

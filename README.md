@@ -27,27 +27,34 @@
 
 対応版は **2.31.3（ビルド2.31.3.425）** です。誤って3.0.0に更新した場合は、先に[Mac・iOS向けの旧版への戻し方](IOS-ROLLBACK.md)をご覧ください。確認済みの上書き手順と制限を記載しています。既に動いている旧版はそのまま保管してください。旧版への変更にはUSBが必要ですが、通常のプレイには不要です。
 
-### 1. データを準備してデータベースを起動
+### 1. セットアップして起動する
 
-コマンドは**1行ずつ実行**し、失敗した場合は先へ進まず原因を確認してください。新しく準備する場合は、公式CDNから基準版のiOSデータを直接取得できます。
-
-```sh
-uv run --locked python download_data.py
-uv run --locked python server.py prepare --data-dir data
-docker compose up -d --wait db
-```
-
-公式ゲームへのログインは不要です。楽曲・MV・ストーリー・コミック・バナー・ヘルプなど、サーバーで使用するゲームデータを取得します。取得元と準備後のコピーを合わせて、**空き容量は約45 GB**を目安にしてください。実際の容量は変わります。取得中はPCをスリープさせないでください。中断後は同じコマンドで再開できます。完了済みファイルはチェックサムを確認してスキップし、途中のファイルはそのファイルの先頭から再取得します。
-
-**2026年9月29日に一部ファイルの取得を確認しましたが、今後の配信や全件取得は保証できません。** 失敗は `data/download-report.jsonl` に記録します。保存作業時点でも、一部の譜面は404でした。不足があると終了コード2になるため、準備へ進む前にレポートを確認してください。一部の機能が動いても、完全な保存を意味しません。アプリ本体や全素材の取得保証、3.0.0への対応は含みません。データの配置・バックアップ・詳しい設定は [DATA.md](DATA.md) を参照してください。
-
-すでにデータがある場合は取得を省略し、`uv run --locked python server.py prepare --data-dir "/path/to/game-data"` を実行してからDBを起動します。Windowsのパス例は `"C:\Users\You\Documents\game-data"` です。`prepare` は秘密鍵・パスワードを生成し、元データを変更せずコピーします。
-
-### 2. 起動して端末を接続
+Docker Desktopを起動し、PCをスリープさせずに実行してください。
 
 ```sh
-uv run --locked python server.py start
+uv run --locked python server.py setup
 ```
+
+必要なソフトを確認し、基準版iOSデータの取得、サーバーの準備、必要に応じたPostgreSQLの起動、
+サーバー起動まで順に行います。中断後は原因を解消して同じコマンドを再実行できます。
+検証済みの取得ファイルは再利用し、設定済みのアカウントを作り直すことはありません。
+設定済み環境では取得・準備を省略するため、素材不足には下記の `repair-data` を使ってください。
+
+CDNで配信されなくなったファイルもあります。取得で止まった場合は
+`data/download-report.jsonl` を確認して再試行してください。
+不足を了承して**一部の素材がない状態**で進む場合のみ、`uv run --locked python server.py setup --allow-missing` を指定します。
+不足素材に対応する楽曲や画面は動かない場合があります。アプリ本体の取得や3.0.0への対応は含みません。
+
+取得済みのゲームデータがある場合：
+
+```sh
+uv run --locked python server.py setup --data-dir "/path/to/game-data" --skip-download
+```
+
+Windowsのパス例は `"C:\Users\You\Documents\game-data"` です。
+[既存PostgreSQLの利用・個別コマンド](DATA.md)も引き続き利用できます。
+
+### 2. 端末を接続する
 
 セットアップページがブラウザーで開きます。開かなければ `private/setup.html` を開いてください。
 
@@ -73,7 +80,22 @@ uv run --locked python server.py start
 
 **ホーム → ソロプレイ → リザルト → アプリ再起動**の順で、進行が保存されるか確認してください。
 
-PCを起動したまま、ターミナルを開いておいてください。Macのスリープ中には接続できません。終了時は **WireGuardをオフ → ターミナルでControl+C**。データベースは `docker compose stop` で停止できます。次回は `docker compose up -d --wait db` と `uv run --locked python server.py start` を実行します。アカウントを毎回取り込む必要はありません。
+### PC再起動後など、次回からの起動
+
+Docker Desktopを開き、同じサーバーフォルダーの **Start-Mac.command** または
+**Start-Windows.cmd** をダブルクリックします。ターミナルからは次の1行でも起動できます。
+
+```sh
+uv run --locked python server.py start
+```
+
+既存環境を再利用し、必要なら対応するDocker DBを起動して、現在のLAN IPを検出します。
+指定したサーバー・トンネル・証明書用ポートは次回も引き継ぎます。ゲームデータの取得は行いません。
+準備不足なら対処が必要な箇所を表示します。IPが変わった場合は「困ったとき」に従ってWireGuardの接続先を更新してください。
+
+プレイ中はPCをスリープさせず、ターミナルを開いたままにします。
+終了時はWireGuardをオフにして **Control+C**。DBも止める場合は `docker compose stop` を実行します。
+Macでダブルクリック起動が拒否される場合は、上記のターミナルコマンドを使ってください。
 
 ## 自動復元できなかった場合の手動復元
 
@@ -178,18 +200,21 @@ uv run --locked python server.py start --ca-dir "/以前の環境への絶対パ
 
 画面が開かない場合は、ターミナルのTLSエラーと証明書を確認してください。
 
-### バナーやヘルプが表示されない場合
+### 画像・楽曲・ヘルプなどが表示されない場合
 
-新規セットアップには含まれています。導入済みの環境ではサーバーを停止して実行します。
+サーバーをControl+Cで停止してから実行します。
 
 ```sh
-uv run --locked python download_data.py --supplemental-only --output data
-uv run --locked python server.py install-supplement --data-dir data
+uv run --locked python server.py repair-data
 ```
 
-完了後にサーバーを再起動してください。対象のバナー・ヘルプ（約50 MB）を補完し、アカウントや設定は変更しません。取得済みの正常なファイルはスキップします。失敗は `data/download-report.jsonl` に記録され、同じコマンドで再試行できます。既存アカウントのある環境で `prepare` を再実行しないでください。
-
-楽曲など、それ以外の素材不足は[データの復旧手順](DATA.md#official-cdn-download--公式cdnからの取得)を参照してください。取得ツールが検証するのは出力フォルダーであり、**サーバーに配置済みのコピーではありません**。取得しただけでは配置済みファイルは修復されません。
+対象ファイルを確認・取得し、**サーバーに配置済みのコピーも修復**します。
+アカウント・設定・鍵は変更せず、正常なファイルは再利用します。全体の確認には時間がかかります。
+別の場所へ取得した場合は `--data-dir "/path/to/game-data"` を指定してください。
+取得できないファイルは `download-report.jsonl` で確認します。不足を了承して検証済み分だけを
+配置する場合のみ `--allow-missing` を追加してください。中断後も同じコマンドで再試行できます。
+完了後は `uv run --locked python server.py start` で起動します。アプリのキャッシュは消さないでください。
+バナー・ヘルプのみの小さな補完手順も[DATA.md](DATA.md)に残しています。
 
 ## 開発・謝辞
 
