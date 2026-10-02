@@ -11,6 +11,14 @@ pinned to `3cfca23267fb0f79d7336732db768e1510f20313`.
 [TeamOpenSirius/OpenSiriusServer](https://github.com/TeamOpenSirius/OpenSiriusServer)
 was an independent protocol reference, not a second backend merged into this release.
 
+## October 2, 2026 — Known download failures in setup guidance
+
+- Japanese/English setup guides now identify the 30 known default chart/configuration
+  HTTP 404s for IDs 901–904 and 10172, with a complete `setup --allow-missing` retry command.
+- Clarified that mapped alternate charts and the released song entry remain in the
+  download plan. The flag accepts all failures, so additional missing files still need review.
+- Documentation only; no new runtime or device verification. Feature inventory stays 30.
+
 ## October 2, 2026 — Recoverable setup, startup, repairs and backups
 
 - Added `server.py setup` to check prerequisites, reuse verified downloads, prepare a

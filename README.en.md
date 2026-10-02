@@ -41,11 +41,22 @@ verified files. Rerun the same command after fixing a failure; an existing confi
 account is reused, never recreated. Existing installations skip downloading and
 preparation—use `repair-data` below for missing files.
 
-Some CDN files may be unavailable. If downloading stops, read
-`data/download-report.jsonl` and retry. To explicitly accept the missing media and
-continue with a **partial installation**, rerun with `uv run --locked python server.py setup --allow-missing`.
-Missing media may prevent corresponding songs or screens from working. This does not
-provide the app or make 3.0.0 compatible.
+**There are currently 30 known missing files:** the default chart/configuration paths
+under `assets/Notations/901/`, `902/`, `903/`, `904/` and `10172/` return HTTP 404.
+The mapped alternate charts for 901–904 and the released song entry 172 are included
+in the download plan; these missing default paths do not mean those songs are entirely missing.
+
+If setup stops with these 30 failures, check `data/download-report.jsonl`, then rerun:
+
+```sh
+uv run --locked python server.py setup --allow-missing
+```
+
+Verified downloads are reused. If you used `--data-dir`, keep that option on the retry.
+The flag accepts **all** missing downloads, not just these 30, so investigate any additional
+failures before continuing. It does not recover unavailable files; other missing media
+may prevent corresponding songs or screens from working. Setup does not provide the app
+or make 3.0.0 compatible.
 
 Already have a game-data folder? Use:
 
