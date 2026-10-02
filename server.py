@@ -39,6 +39,8 @@ def prepare(a):
         if (source/name).exists():shutil.copy2(source/name,dest/name)
     for src,dst in [(source/'assets',VENDOR/'_data/assets'),(source/'episodes',VENDOR/'_data/episodes'),(source/'scenes',dest/'scenes'),(source/'static-assets',PRIVATE/'static-assets')]:
         if src.is_dir():shutil.copytree(src,dst,dirs_exist_ok=True)
+    from supplemental_resources import install_resources
+    install_resources(source, ROOT, require_all=False)
     from helpers.mastermemory import unpack
     from helpers.msgpack import from_array
     from models.master_data import TABLES
@@ -199,11 +201,16 @@ def main():
     p=sub.add_parser('prepare');p.add_argument('--data-dir',required=True)
     p=sub.add_parser('import-account');p.add_argument('archive',type=Path)
     p=sub.add_parser('fresh-account');p.add_argument('--name',default='Player')
+    p=sub.add_parser('install-supplement');p.add_argument('--data-dir',required=True)
     sub.add_parser('doctor')
     p=sub.add_parser('start');p.add_argument('--ca-dir',help='Reuse an existing local mitmproxy CA directory; saved for future starts');p.add_argument('--host');p.add_argument('--port',type=int,default=8125);p.add_argument('--wg-port',type=int,default=51822);p.add_argument('--cert-port',type=int,default=8766);p.add_argument('--no-browser',action='store_true')
     a=parser.parse_args();PRIVATE.mkdir(exist_ok=True,mode=0o700)
     if a.command=='prepare':prepare(a)
     elif a.command in ('import-account','fresh-account'):asyncio.run(account(a))
+    elif a.command=='install-supplement':
+        from supplemental_resources import install_resources
+        count=install_resources(Path(a.data_dir).expanduser().resolve(),ROOT)
+        print(f'Installed {count} verified supplemental resources. Accounts and configuration unchanged.')
     elif a.command=='doctor':doctor(a)
     else:start(a)
 

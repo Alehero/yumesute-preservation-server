@@ -11,6 +11,7 @@ Supply an ordinary local directory, not an account ZIP. `prepare` copies these p
 game-data/
   master-original.db       # required / 必須：元のMasterMemoryバイナリー
   master-manifest.json     # required / 必須：マスターのマニフェスト
+  help.bin                 # supplemental help index / 追加のヘルプ目次データ
   assets/                 # upstream _data/assets layout / 上流と同じ構成
     2d-assets/ios/catalog.json
     2d-assets/ios/...      # bundle paths relative to the catalog
@@ -48,9 +49,9 @@ This uses the original HTTPS host `assets-e.wds-stellarium.com`, without account
 
 公式のHTTPS配信元から、アカウント情報や署名付きURLを使わず取得します。固定版マスター・圧縮カタログは既知のSHA256で検証します。素材は転送時のサイズと、応答にあればContent-MD5を検証し、展開後のSHA256を保存します。HTTPのgzip等による圧縮にも対応しています。検証記録のない既存ファイルは再取得します。中断したファイルを完成扱いにせず、再実行時に完了済みファイルを確認して失敗分を再取得します。リダイレクトには従いません。並列数は既定4、`--workers 1` で減らせます（最大8）。
 
-`--metadata-only` downloads only the master/catalogs and writes `download-plan.json`. `--limit 3` is a small download test, **not a usable complete install**. Neither option proves full coverage. The current plan has 34,057 iOS bundles, 2,012 chart/config paths, 264 comic images and 30 supplemental scene scripts. Some paths may be unavailable. A full post-EOS download has not been tested; representative master/catalog/audio/chart/model/comic downloads have succeeded. This is iOS only; no Android catalog is downloaded.
+`--metadata-only` downloads only the master/catalogs and writes `download-plan.json`. `--limit 3` is a small download test, **not a usable complete install**. Neither option proves full coverage. The current plan has 34,057 iOS bundles, 2,012 chart/config paths, 264 comic images, 30 supplemental scene scripts, and 1,133 pinned supplemental files (1,132 static resources plus help.bin). Some paths may be unavailable. A full post-EOS download has not been tested; representative master/catalog/audio/chart/model/comic downloads have succeeded. This is iOS only; no Android catalog is downloaded.
 
-`--metadata-only` はマスター・カタログと取得予定一覧のみ、`--limit 3` は素材3件のテストです。**どちらも一式の取得ではありません。** 現在の一覧はiOSアセット34,057件、譜面・設定2,012件、コミック264件、補完シナリオ30件です。取得できないパスもあります。サービス終了後の全件取得は未検証で、代表的なマスター・カタログ・音声・譜面・3D素材・コミックの取得を確認しています。Android用カタログは対象外です。
+`--metadata-only` はマスター・カタログと取得予定一覧のみ、`--limit 3` は素材3件のテストです。**どちらも一式の取得ではありません。** 現在の一覧はiOSアセット34,057件、譜面・設定2,012件、コミック264件、補完シナリオ30件、追加ファイル1,133件（静的素材1,132件とhelp.bin）です。取得できないパスもあります。サービス終了後の全件取得は未検証で、代表的なマスター・カタログ・音声・譜面・3D素材・コミックの取得を確認しています。Android用カタログは対象外です。
 
 The output matches the folder layout above. `prepare --data-dir data` copies it into the release. Budget for both copies (~45 GB free is a starting estimate). This does not guarantee every static banner, story script, login/event response, or the app executable. The 30 identified main/card script gaps are now fetched and verified; see STORY_COVERAGE.md. An account export still provides only account state. Availability on the official CDN does not establish redistribution permission; this repository contains downloader code and identifiers, not those media files.
 
@@ -151,3 +152,42 @@ window, not a promise of permanent official access.
 平文で保存しませんが、別途行う通信記録には含まれる場合があります。
 DBのバックアップに加えて `jwt_secret` を含む設定と `private/` も保管してください。
 初回の公式データ取得は配信状況に依存し、将来の取得を保証するものではありません。
+
+## Pinned static resources and help / バナー・ヘルプの補完
+
+`resource-supplement.json` contains public CDN paths, byte sizes and SHA256 hashes;
+it contains no game payloads or account credentials. It covers 1,132 distinct verified
+static URLs plus `/master-data/production/help.bin`, totaling 49,943,880 bytes.
+The earlier archival count of 1,104 was newly downloaded files; 28 were already saved.
+Coverage includes all 826 distinct archived BannerMaster image paths and 30 help-index
+images. Additional successfully archived paths are included, but unverified guesses
+and 404 probes are excluded. This is not a canonical inventory of all historical media.
+
+The normal downloader includes this supplement; `--supplemental-only` downloads just
+these 1,133 files. All use pinned checksums, existing-file verification and atomic
+replacement. The original downloader's retry, failed-file reporting and partial-file
+cleanup also apply. Reruns retry missing or corrupted files. Do not interpret a limited
+or metadata-only run as a completed download. The full download plan now has 37,487
+unique files; the full 45-GB-scale download has not been rerun in this batch.
+
+For prepared installations, `server.py install-supplement --data-dir data` validates
+all supplemental inputs before writing any of them, then atomically replaces each
+individual destination file. It copies static resources to `private/static-assets/`
+and help metadata to `private/upstream/help.bin`. It neither changes account selection
+nor touches the database/configuration. Stop the server before installing and restart
+afterward; a filesystem interruption can leave a partial set, so rerun the installer.
+Fresh `prepare` copies available verified supplemental resources from the data folder.
+Missing help metadata returns a local 404; it is never redirected to the official CDN.
+The existing static-resource route likewise returns 404 for unavailable files.
+
+追加リストには公開配信先・サイズ・SHA256のみを収録し、素材本体やアカウント情報は含めません。
+以前の「1,104件」は新規取得分で、保存済み28件と合わせた静的素材は1,132件です。
+さらにヘルプ目次を加えた1,133件、計49,943,880バイトを対象にしています。
+マスター参照のバナー826件とヘルプ画像30件を含みますが、過去の全素材一覧ではありません。
+
+通常の取得にも含まれ、`--supplemental-only` では追加分だけを取得できます。
+既存環境では停止後に `server.py install-supplement --data-dir data` を実行してください。
+全入力を検証してからファイル単位で置き換え、アカウント・DB・設定は変更しません。
+コピー中に中断した場合は再実行できます。ヘルプや画像が不足する場合はローカルで404を返します。
+実機のキャッシュによる成功と区別するため、空フォルダーへの取得と全件のHTTP配信を検証しました。
+ゲーム内でのヘルプ表示と完全な新規環境の構築は別途確認が必要です。

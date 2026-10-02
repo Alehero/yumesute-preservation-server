@@ -11,6 +11,30 @@ pinned to `3cfca23267fb0f79d7336732db768e1510f20313`.
 [TeamOpenSirius/OpenSiriusServer](https://github.com/TeamOpenSirius/OpenSiriusServer)
 was an independent protocol reference, not a second backend merged into this release.
 
+## October 1, 2026 — Public banner and help preservation
+
+- The public downloader now includes **1,132 verified static resources plus help.bin**,
+  with pinned SHA256 hashes: all 826 archived BannerMaster image paths, all 30
+  help-index images, and other successfully archived static paths. The earlier 1,104
+  figure counted only newly downloaded static files, excluding 28 existing copies.
+- Added `--supplemental-only` for this roughly 50-MB set, and
+  `server.py install-supplement --data-dir data` for existing prepared installations.
+  No full bundle download or account reinitialization is required. New preparations
+  also install available verified supplemental data.
+- Help metadata is served locally at its original path. Missing help/static files
+  return 404 rather than redirecting to official servers. Installation validates the
+  complete input set first, preserves accounts/configuration, and replaces individual
+  files atomically. Missing downloads are reported and can be retried.
+- **Live download and server-tested:** all 1,133 files downloaded into an empty folder
+  and matched pinned hashes; all 1,133 local HTTP responses matched as well. The
+  38-test suite passed, including installer failure protection and account preservation.
+- **Device confirmation pending:** help-page rendering. The earlier archive-only
+  status is superseded for this known set, not for every historical resource.
+  The full game-data download and clean installation remain separate validation work.
+- Source contains paths/checksums only; files still come from the official CDN while
+  available. Downloading assets does not implement historical events. The gameplay
+  inventory stays **30 groups**, built around the credited pinned upstream backend.
+
 ## October 1, 2026 — Circle menu compatibility
 
 - PR #2 by [tomyuan520](https://github.com/tomyuan520) adds safe empty Circle

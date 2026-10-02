@@ -118,6 +118,10 @@ install_gift(app)
 @app.middleware('http')
 async def local_files(request,call_next):
     path=request.url.path
+    if path == '/master-data/production/help.bin':
+        help_file=ROOT/'private/upstream/help.bin'
+        if help_file.is_file():return FileResponse(help_file,media_type='application/octet-stream')
+        return Response('Help metadata not available locally',404)
     if path.startswith('/master-data/production/scenes/'):
         root=(ROOT/'private/upstream/scenes').resolve()
         f=(root/path.rsplit('/',1)[-1]).resolve()

@@ -38,3 +38,10 @@ empty discovery/ranking lists, missing-circle status, all four company objects a
 account-scoped support progress/date serialization. It makes no external requests or
 account changes. Passing these checks does not certify playable circles or the
 reported rank-30 client crash; those require device testing.
+
+`test_supplemental_resources.py` checks pinned resource metadata, invalid paths,
+validation-before-write, account preservation, repeated installation, and missing-file
+reporting. Existing downloader tests cover interrupted/corrupt files and checksum
+failures. `check_supplement_serving.py` checks all 1,133 pinned resources over HTTP on
+localhost:8125, plus missing-static-file 404 behavior; run only on your prepared local
+server with the supplement installed. It reads files and does not mutate account data.

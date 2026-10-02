@@ -38,11 +38,32 @@ uv run --locked python server.py prepare --data-dir data
 docker compose up -d --wait db
 ```
 
-The downloader does not need an official game login. It fetches master data, iOS 1.96.0 asset bundles (including audio/MV resources), chart/config files, master-listed comics, and 30 supplemental story scripts missing from the pinned upstream archive. Allow roughly **45 GB of free space** for the downloaded source plus the prepared copy; actual usage varies. Keep the computer awake. Rerun the same download command after interruption: completed files are checksum-checked and skipped; an interrupted file restarts from its beginning.
+The downloader does not need an official game login. It fetches master data, iOS 1.96.0 asset bundles (including audio/MV resources), chart/config files, master-listed comics, 30 supplemental story scripts missing from the pinned upstream archive, and 1,132 additional static resources plus the help index. Allow roughly **45 GB of free space** for the downloaded source plus the prepared copy; actual usage varies. Keep the computer awake. Rerun the same download command after interruption: completed files are checksum-checked and skipped; an interrupted file restarts from its beginning.
 
 **Availability was sampled on September 29, 2026; it is not guaranteed.** Read `data/download-report.jsonl` for failures. Some master-listed charts already returned 404 in the preservation capture. The command exits with code 2 if any media is missing; review the report before proceeding. A partial download may support some features, but is not a complete installation. This downloader does not supply the app, fix 3.0.0, or guarantee every story/banner. The identified main/card story-script gaps are covered; see [story coverage](STORY_COVERAGE.md). See [DATA.md](DATA.md).
 
 If you already have local game data, skip downloading and use `uv run --locked python server.py prepare --data-dir "/path/to/game-data"`, then start the database. A Windows path can be `"C:\Users\You\Documents\game-data"`. Preparation generates per-installation secrets and copies supplied files without changing the originals.
+
+### Existing installation: add banners and help resources
+
+After updating the server code, stop the server and run:
+
+```sh
+uv run --locked python download_data.py --supplemental-only --output data
+uv run --locked python server.py install-supplement --data-dir data
+```
+
+Then start the server normally. This downloads **1,132 pinned static resources plus
+`help.bin` (about 50 MB)**, without downloading bundles again. It includes all 826
+archived BannerMaster paths and all 30 help-index images. The installer validates the
+complete supplement before copying files and does not touch accounts or configuration.
+Do not rerun `prepare` on an existing installation. A download failure is listed in
+`data/download-report.jsonl`; rerun to retry. Availability is not guaranteed.
+
+Fresh setups include these resources in the normal download/prepare commands.
+The complete supplement was downloaded into an empty folder and verified over local
+HTTP on October 1, 2026; in-game help rendering remains unverified. This is known
+resource coverage, not proof that every historical asset or event is supported.
 
 ### 2. Restore a saved account (optional)
 
@@ -126,7 +147,7 @@ Backend: [server-of-dreams](https://github.com/UnknownSekai/server-of-dreams), p
 
 Server extensions are GPL-3.0. Exporter-derived code retains its MIT notice. See [THIRD_PARTY.md](THIRD_PARTY.md). This community project is unaffiliated with the game's operators or rights holders.
 
-Run the self-contained tests with `uv run --locked python -m unittest discover -s tests -v` (34 tests). `tests/check_running.py` additionally checks a running local test installation on port 8125 and reads its private linking credentials without printing them. Do not run it against someone else's server.
+Run the self-contained tests with `uv run --locked python -m unittest discover -s tests -v` (38 tests). `tests/check_running.py` additionally checks a running local test installation on port 8125 and reads its private linking credentials without printing them. Do not run it against someone else's server.
 
 ### Certificate identity and reuse
 

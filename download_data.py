@@ -172,34 +172,39 @@ def save_story_manifest(output, entries):
         temp.replace(path)
 
 
-def run(output, workers=4, limit=0, metadata_only=False):
+def run(output, workers=4, limit=0, metadata_only=False, supplemental_only=False):
     from server import bootstrap
-    bootstrap()
+    if not supplemental_only: bootstrap()
     output = Path(output).expanduser().resolve()
     output.mkdir(parents=True, exist_ok=True)
     def required(url, path, checksum):
         result = fetch(url, output / path, checksum)
         if result['status'] not in ('downloaded', 'verified-existing'):
             raise RuntimeError(f'{path}: {result}')
-    required(BASE + '/master-data/production/' + MANIFEST['uri'], 'master-original.db', MASTER_HASH)
-    (output / 'master-manifest.json').write_text(json.dumps(MANIFEST, indent=2))
-    jobs = []
-    for kind, checksum in CATALOG_HASHES.items():
-        rel = f'catalogs/{kind}.json.br'
-        required(f'{BASE}/production/{kind}/iOS/{VERSION}/catalog_{VERSION}.json.br', rel, checksum)
-        catalog = json.loads(brotli.decompress((output / rel).read_bytes()))
-        dest = output / f'assets/{kind}/ios/catalog.json'
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_text(json.dumps(catalog))
-        jobs.extend((f'assets/{kind}/ios/{p}', f'{BASE}/production/{kind}/iOS/{VERSION}/{p}')
-                    for p in bundle_paths(catalog, kind))
-    jobs.extend(metadata_jobs((output / 'master-original.db').read_bytes()))
-    stories = story_supplement()
-    expected = {}
-    for entry in stories.values():
-        path = entry['metadata']['episode_detail_asset_source']
+    jobs = []; expected = {}; stories = {}
+    if not supplemental_only:
+        required(BASE + '/master-data/production/' + MANIFEST['uri'], 'master-original.db', MASTER_HASH)
+        (output / 'master-manifest.json').write_text(json.dumps(MANIFEST, indent=2))
+        for kind, checksum in CATALOG_HASHES.items():
+            rel = f'catalogs/{kind}.json.br'
+            required(f'{BASE}/production/{kind}/iOS/{VERSION}/catalog_{VERSION}.json.br', rel, checksum)
+            catalog = json.loads(brotli.decompress((output / rel).read_bytes()))
+            dest = output / f'assets/{kind}/ios/catalog.json'
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_text(json.dumps(catalog))
+            jobs.extend((f'assets/{kind}/ios/{p}', f'{BASE}/production/{kind}/iOS/{VERSION}/{p}')
+                        for p in bundle_paths(catalog, kind))
+        jobs.extend(metadata_jobs((output / 'master-original.db').read_bytes()))
+        stories = story_supplement()
+        for entry in stories.values():
+            path = entry['metadata']['episode_detail_asset_source']
+            expected[path] = entry['sha256']
+            jobs.append((path, BASE + '/master-data/production/' + path))
+    from supplemental_resources import resources
+    for path, entry in resources().items():
+        jobs.append((path, BASE + entry['url_path']))
         expected[path] = entry['sha256']
-        jobs.append((path, BASE + '/master-data/production/' + path))
+    jobs = list(dict(jobs).items())
     print(f'Enumerated {len(jobs)} media files for iOS {VERSION}.', flush=True)
     (output / 'download-plan.json').write_text(json.dumps(jobs))
     if metadata_only:
@@ -227,10 +232,11 @@ def main():
     p.add_argument('--output', default='data')
     p.add_argument('--workers', type=int, choices=range(1, 9), default=4)
     p.add_argument('--limit', type=int, default=0, help='Download only N media files (test only)')
+    p.add_argument('--supplemental-only', action='store_true', help='Fetch only pinned static resources and help metadata; no bundles or account changes')
     p.add_argument('--metadata-only', action='store_true', help='Fetch master/catalogs and enumerate media')
     args = p.parse_args()
     if args.limit < 0: p.error('--limit must be nonnegative')
-    raise SystemExit(run(args.output, args.workers, args.limit, args.metadata_only))
+    raise SystemExit(run(args.output, args.workers, args.limit, args.metadata_only, args.supplemental_only))
 
 if __name__ == '__main__':
     main()
