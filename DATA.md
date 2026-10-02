@@ -2,6 +2,14 @@
 
 [日本語ガイド](README.md) · [English guide](README.en.md)
 
+This is the reference for **backups, moving an installation, using an existing
+PostgreSQL server, and troubleshooting missing game files**. For ordinary setup and
+automatic account recovery, follow the README; you do not need to read this document
+from beginning to end.
+
+この文書は **バックアップ・環境の移行・既存PostgreSQLの利用・素材不足の調査** のための詳細資料です。
+通常の導入とアカウント自動復元はREADMEの手順で進められます。最初からすべて読む必要はありません。
+
 ## Game-data folder / ゲームデータの構成
 
 Supply an ordinary local directory, not an account ZIP. `prepare` copies these paths:
@@ -35,9 +43,27 @@ An export from the account tool does **not** contain any of the above. Game data
 
 アカウント保存ツールのZIPには上記データは含まれません。端末のキャッシュはUSB接続だけで取得できるとは限らず、通常のバックアップにも必ず含まれるわけではありません。本リポジトリでは公式CDNから直接取得するツールを提供しますが、データ一式の再配布はしていません。指定マスターの配信が終了し、手元にもない場合はセットアップできません。素材フォルダーは準備コマンド上は省略可能ですが、その素材を必要とする画面・楽曲は動きません。キャッシュ済みの端末で一部動作しても、完全保存の保証にはなりません。
 
-Upstream's pinned repository includes its own starter-account data, typed master tables and episode resources. Bootstrap fetches that repository as published; our preparation replaces typed master tables using your raw master. Our source repository does not embed a copy of those resources. Upstream availability is a first-install dependency. Save your prepared installation locally if you need offline reinstallation.
+The first setup automatically downloads a specific version of **server-of-dreams**,
+the backend this project builds on, into `vendor/server-of-dreams`. That repository
+also supplies starter-save templates and some game-data files. Setup then converts
+your downloaded master database into the tables the backend reads. You do not need
+to perform these steps yourself.
 
-固定コミットの上流リポジトリには初期アカウントデータ、型付きマスター、エピソードのリソースが含まれています。初回準備では上流を取得し、型付きマスターを自分の原本から生成し直します。本リポジトリ内にこれらのコピーは含めません。初回は上流へのアクセスが必要です。再インストールに備え、準備済み環境も手元で保管してください。
+For backups, the practical point is: **a GitHub source ZIP alone is not a complete
+working installation**. Keep your prepared folder (including `vendor/`, `private/`
+and configuration), downloaded game data, and a PostgreSQL backup. Rebuilding from
+source otherwise depends on upstream downloads still being available. Keeping these
+files reduces that dependency; offline reinstalling on a different computer may still
+require the appropriate software and dependencies.
+
+初回セットアップでは、このプロジェクトの土台である **server-of-dreams** の指定版を
+`vendor/server-of-dreams` に自動取得します。その中の初期セーブのひな形や一部のゲームデータも利用し、
+取得したマスターデータをサーバーが読める形式に変換します。手動で行う作業はありません。
+
+バックアップで大事なのは、**GitHubから取得したソースZIPだけでは動作環境を保存したことにならない**点です。
+準備済みフォルダー（`vendor/`・`private/`・設定を含む）、取得済みゲームデータ、PostgreSQLのバックアップを
+保管してください。ソースから作り直す場合は、外部リポジトリなどが引き続き取得できる必要があります。
+これらを保存しておけば再取得への依存を減らせますが、別のPCにオフラインで導入するには、対応する実行環境や依存ソフトも必要です。
 
 ## Official-CDN download / 公式CDNからの取得
 
@@ -49,23 +75,17 @@ This uses the original HTTPS host `assets-e.wds-stellarium.com`, without account
 
 公式のHTTPS配信元から、アカウント情報や署名付きURLを使わず取得します。固定版マスター・圧縮カタログは既知のSHA256で検証します。素材は転送時のサイズと、応答にあればContent-MD5を検証し、展開後のSHA256を保存します。HTTPのgzip等による圧縮にも対応しています。検証記録のない既存ファイルは再取得します。中断したファイルを完成扱いにせず、再実行時に完了済みファイルを確認して失敗分を再取得します。リダイレクトには従いません。並列数は既定4、`--workers 1` で減らせます（最大8）。
 
-`--metadata-only` downloads only the master/catalogs and writes `download-plan.json`. `--limit 3` is a small download test, **not a usable complete install**. Neither option proves full coverage. The current plan has 34,057 iOS bundles, 2,012 chart/config paths, 264 comic images, 30 supplemental scene scripts, and 1,133 pinned supplemental files (1,132 static resources plus help.bin). Some paths may be unavailable. A full post-EOS download has not been tested; representative master/catalog/audio/chart/model/comic downloads have succeeded. This is iOS only; no Android catalog is downloaded.
+`--metadata-only` downloads only the master/catalogs and writes `download-plan.json`. `--limit 3` is a small download test, **not a usable complete install**. Neither option proves full coverage. The current plan has 34,057 iOS bundles, 2,012 chart/config paths, 264 comic images, story scripts, and 1,133 pinned supplemental files (1,132 static resources plus help.bin). Some paths may be unavailable. A full post-EOS download has not been tested; representative master/catalog/audio/chart/model/comic downloads have succeeded. This is iOS only; no Android catalog is downloaded.
 
-`--metadata-only` はマスター・カタログと取得予定一覧のみ、`--limit 3` は素材3件のテストです。**どちらも一式の取得ではありません。** 現在の一覧はiOSアセット34,057件、譜面・設定2,012件、コミック264件、補完シナリオ30件、追加ファイル1,133件（静的素材1,132件とhelp.bin）です。取得できないパスもあります。サービス終了後の全件取得は未検証で、代表的なマスター・カタログ・音声・譜面・3D素材・コミックの取得を確認しています。Android用カタログは対象外です。
+`--metadata-only` はマスター・カタログと取得予定一覧のみ、`--limit 3` は素材3件のテストです。**どちらも一式の取得ではありません。** 現在の一覧はiOSアセット34,057件、譜面・設定2,012件、コミック264件、シナリオ、追加ファイル1,133件（静的素材1,132件とhelp.bin）です。取得できないパスもあります。サービス終了後の全件取得は未検証で、代表的なマスター・カタログ・音声・譜面・3D素材・コミックの取得を確認しています。Android用カタログは対象外です。
 
-The output matches the folder layout above. `prepare --data-dir data` copies it into the release. Budget for both copies (~45 GB free is a starting estimate). This does not guarantee every static banner, story script, login/event response, or the app executable. The 30 identified main/card script gaps are now fetched and verified; see STORY_COVERAGE.md. An account export still provides only account state. Availability on the official CDN does not establish redistribution permission; this repository contains downloader code and identifiers, not those media files.
+The output matches the folder layout above. `prepare --data-dir data` copies it into the release. Budget for both copies (~45 GB free is a starting estimate). This does not guarantee every static banner, story script, login/event response, or the app executable. An account export still provides only account state. Availability on the official CDN does not establish redistribution permission; this repository contains downloader code and identifiers, not those media files.
 
-出力先は上記の構成になり、`prepare --data-dir data` で配布環境にコピーします。両方を保存する容量（空き約45 GBが目安）が必要です。全バナー・シナリオ・ログイン／イベント応答・アプリ本体の取得を保証するものではありません。確認したメイン・カードシナリオの不足30件は取得・検証対象です。STORY_COVERAGE.mdをご覧ください。アカウントZIPもアカウントの状態のみです。公式CDNで取得できることは再配布の許可を意味しません。本リポジトリに含めるのは取得用コードと識別情報で、素材そのものではありません。
+出力先は上記の構成になり、`prepare --data-dir data` で配布環境にコピーします。両方を保存する容量（空き約45 GBが目安）が必要です。全バナー・シナリオ・ログイン／イベント応答・アプリ本体の取得を保証するものではありません。アカウントZIPもアカウントの状態のみです。公式CDNで取得できることは再配布の許可を意味しません。本リポジトリに含めるのは取得用コードと識別情報で、素材そのものではありません。
 
 For an already configured account, do not rerun `prepare`. Stop the local server, rerun the downloader, and copy recovered `data/assets/` files into `vendor/server-of-dreams/_data/assets/`, and `data/static-assets/` into `private/static-assets/`, preserving relative paths. Keep the existing account/configuration files. Restart afterward. Do not clear your device cache as a test.
 
 アカウント設定後は `prepare` を再実行しないでください。ローカルサーバーを停止し、取得ツールを再実行して、取得できた `data/assets/` 内のファイルを `vendor/server-of-dreams/_data/assets/` へ、`data/static-assets/` 内を `private/static-assets/` へ、相対パスを保ってコピーします。アカウント・設定ファイルはそのままにし、その後再起動してください。テストのために端末のキャッシュを削除しないでください。
-
-### Supplemental stories / 不足シナリオの補完
-
-The normal download includes the 30 identified missing scene scripts. Each must match its preserved SHA256 before its metadata is written to `data/episode-manifest.json`. The usual `prepare --data-dir data` installs both scripts and metadata in their server locations. No separate story command is needed. The repository contains only IDs, metadata, paths and hashes in `story-supplement.json`; scene payloads are downloaded from the official CDN.
-
-通常の一括取得に、判明している不足シナリオ30件も含まれます。各ファイルのSHA256を確認してから `data/episode-manifest.json` に対応情報を追加し、通常の `prepare --data-dir data` でシナリオとメタデータを所定の場所に配置します。別のシナリオ用コマンドは不要です。リポジトリの `story-supplement.json` にはID・メタデータ・パス・ハッシュだけを収録し、本体は公式CDNから取得します。
 
 ## Existing PostgreSQL / 既存のPostgreSQLを利用する場合
 
@@ -191,3 +211,27 @@ The existing static-resource route likewise returns 404 for unavailable files.
 コピー中に中断した場合は再実行できます。ヘルプや画像が不足する場合はローカルで404を返します。
 実機のキャッシュによる成功と区別するため、空フォルダーへの取得と全件のHTTP配信を検証しました。
 ゲーム内でのヘルプ表示と完全な新規環境の構築は別途確認が必要です。
+
+## Restore an existing export ZIP / 保存済みZIPの復元
+
+Try automatic login and then official Data Link/browser recovery first. If those
+cannot retrieve the account and you already have an export ZIP, prepare a **separate
+empty installation/database**, start its database, and run this before its first
+`server.py start`:
+
+```sh
+uv run --locked python server.py import-account "/path/to/your-account.zip"
+```
+
+The importer refuses to overwrite existing accounts. Keep your original ZIP and any
+working installation. The ZIP restores the state at export time, not subsequent local
+progress. Start the new server and connect using its setup page. Try normal login if
+the export contains a bridge for that device; otherwise use the **local** credentials
+in its `private/linking-credentials.txt` through the game's Data Link menu.
+
+まずは通常ログインによる自動復元、次に公式のデータ連携やブラウザー復元を試してください。
+取得できず、以前保存したZIPがある場合は、**別の空の環境・DB**を準備してDBを起動し、
+サーバーの初回起動前に上記コマンドを実行します。既存アカウントへの上書きは拒否します。
+元のZIPと動作中の環境は保持してください。ZIPは保存時点の状態で、その後のローカル進行は含みません。
+新しいサーバーを起動して接続し、通常ログインできなければ、新環境の `private/linking-credentials.txt` にある
+ローカル連携情報をゲームの「データ連携」で入力してください。

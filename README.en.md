@@ -38,9 +38,9 @@ uv run --locked python server.py prepare --data-dir data
 docker compose up -d --wait db
 ```
 
-The downloader does not need an official game login. It fetches master data, iOS 1.96.0 asset bundles (including audio/MV resources), chart/config files, master-listed comics, 30 supplemental story scripts missing from the pinned upstream archive, and 1,132 additional static resources plus the help index. Allow roughly **45 GB of free space** for the downloaded source plus the prepared copy; actual usage varies. Keep the computer awake. Rerun the same download command after interruption: completed files are checksum-checked and skipped; an interrupted file restarts from its beginning.
+The downloader does not need an official game login. It downloads the game data used by the server, including songs, MVs, stories, comics, banners, and help resources. Allow roughly **45 GB of free space** for the downloaded source plus the prepared copy; actual usage varies. Keep the computer awake. Rerun the same download command after interruption: completed files are checksum-checked and skipped; an interrupted file restarts from its beginning.
 
-**Availability was sampled on September 29, 2026; it is not guaranteed.** Read `data/download-report.jsonl` for failures. Some master-listed charts already returned 404 in the preservation capture. The command exits with code 2 if any media is missing; review the report before proceeding. A partial download may support some features, but is not a complete installation. This downloader does not supply the app, fix 3.0.0, or guarantee every story/banner. The identified main/card story-script gaps are covered; see [story coverage](STORY_COVERAGE.md). See [DATA.md](DATA.md).
+**Availability was sampled on September 29, 2026; it is not guaranteed.** Read `data/download-report.jsonl` for failures. Some master-listed charts already returned 404 in the preservation capture. The command exits with code 2 if any media is missing; review the report before proceeding. A partial download may support some features, but is not a complete installation. This downloader does not supply the app, fix 3.0.0, or guarantee every story/banner. See [DATA.md](DATA.md) for data layout, backups, and advanced setup.
 
 If you already have local game data, skip downloading and use `uv run --locked python server.py prepare --data-dir "/path/to/game-data"`, then start the database. A Windows path can be `"C:\Users\You\Documents\game-data"`. Preparation generates per-installation secrets and copies supplied files without changing the originals.
 
@@ -65,19 +65,20 @@ The complete supplement was downloaded into an empty folder and verified over lo
 HTTP on October 1, 2026; in-game help rendering remains unverified. This is known
 resource coverage, not proof that every historical asset or event is supported.
 
-### 2. Restore a saved account (optional)
+### 2. Recover your account automatically
 
-**Starting fresh or trying automatic official recovery? Skip this step.** The server creates your starter save automatically when first started. New saves begin at the opening tutorial; the registration request saves the name entered in game.
+**Try normal login first—no account ZIP or manual import is needed.** After connecting
+in step 3, open the game and tap the title screen. The server uses the official login
+information already remembered by the client to attempt recovery. Once saved locally,
+your account loads from this server on subsequent logins.
 
-All local accounts, including imports, receive a **permanent gift of 10,000 song tickets (歌劇目録)**. Claim **楽曲解放サポート** from Presents; it is available once per account with no expiry. Set `preservation_song_tickets` in `preservation-rules.json` before the gift is issued to change the amount (0 disables new issuance). Earlier direct starter grants are retained, so those accounts can also claim this gift. This is a local preservation reward, not an official event or unlock-all preset; song and chart unlock conditions still apply.
+This requires the client to retain usable official login information and the official
+account-retrieval endpoints to remain available. If your account does not appear,
+use the manual recovery options below. A client with no saved login starts with a
+local starter account; it cannot identify an old official account automatically.
 
-To restore an account export instead, run this **before the first server start**:
-
-```sh
-uv run --locked python server.py import-account "/path/to/your-account.zip"
-```
-
-Import preserves captured ownership and refuses to overwrite existing accounts. **Keep the original ZIP.** If your export includes a login bridge, try normal login on the original installation; otherwise use Data Link below.
+All local accounts receive a one-time **10,000 song-ticket (歌劇目録)** gift.
+Claim **楽曲解放サポート** from Presents. Normal song/chart unlock conditions still apply.
 
 ### 3. Start and connect the device
 
@@ -93,7 +94,7 @@ A setup page opens in your browser. If it does not, open `private/setup.html`.
 4. Install the downloaded profile under **Settings → General → VPN & Device Management**.
 5. Match the certificate name/fingerprint shown in setup; another “mitmproxy” profile may have a different key. Reuse a working local store with `server.py start --ca-dir "/path/to/old/private/mitmproxy"` (saved for future starts). Enable **full trust** under **General → About → Certificate Trust Settings**. Installing the profile alone is insufficient.
 6. Fully close and reopen the game and enter from the title screen. Known local accounts load locally. An unrecognized official login token triggers an attempt to recover your official save.
-7. To recover using official credentials, choose **title Menu → データ連携 → 連携パスワード入力** and enter your **official linking ID and password**. Check the displayed account name. To select this installation's original starter or manually imported save instead, use the **local** credentials in `private/linking-credentials.txt`. Apple sign-in recovery is not implemented. Linking changes the account selected on the receiving device.
+7. **Only if automatic recovery did not restore your account**, choose **title Menu → データ連携 → 連携パスワード入力** and enter your **official linking ID and password**. Check the displayed account name. To select this installation's original starter or manually imported save instead, use the **local** credentials in `private/linking-credentials.txt`. Apple sign-in recovery is not implemented. Linking changes the account selected on the receiving device.
 8. Test **home → solo play → results → app restart**, checking that progress persists.
 
 **Recovery behavior:** a successful official fetch is saved transactionally; future logins with recognized credentials use the local copy without contacting the official server. Incorrect credentials return an error. If the official service is unavailable before any official save has been recovered, the server selects its existing starter without resetting it; that credential then stays linked locally. After recovery, an unknown credential during an outage returns an error rather than selecting a starter. Malformed responses and unrecognized errors never cause fallback. Set `official_account_recovery` to `false` in `preservation-rules.json` to disable official requests; known local accounts still work. See [recovery and backups](DATA.md#automatic-account-recovery--アカウントの自動復元).
@@ -102,7 +103,9 @@ A clean client with no token uses the local starter. Registration reuses that sa
 
 Keep the computer awake and terminal open. To stop: **turn WireGuard off, then press Control+C**. Stop PostgreSQL with `docker compose stop`. Next time, run `docker compose up -d --wait db` and `server.py start`. Do not re-import your account each session.
 
-## Download an official-account backup from your browser
+## Manual recovery if automatic login did not restore your account
+
+If in-game Data Link is unsuccessful or you want a backup before importing, use the browser recovery page.
 
 With the server running, open **[Account recovery](http://127.0.0.1:8125/recovery)**
 on the **server computer**, or follow its setup-page link. Use the chosen backend
@@ -116,6 +119,11 @@ never overwritten. Then use your official linking credentials through the game's
 Data Link screen to select the local recovered account. This explicit flow also
 works when ordinary login is already linked to a starter. It never falls back to a
 starter on failure. Initial recovery still requires working official endpoints.
+
+Already have a saved export ZIP and official recovery is unavailable? Follow the
+[saved-ZIP import instructions](DATA.md#restore-an-existing-export-zip--保存済みzipの復元).
+That command requires a separate empty installation if this server has already created
+an account; do not delete a working save to make room for it.
 
 ## Status
 

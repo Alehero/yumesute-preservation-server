@@ -11,6 +11,17 @@ pinned to `3cfca23267fb0f79d7336732db768e1510f20313`.
 [TeamOpenSirius/OpenSiriusServer](https://github.com/TeamOpenSirius/OpenSiriusServer)
 was an independent protocol reference, not a second backend merged into this release.
 
+## October 2, 2026 — Simpler setup and account-recovery guidance
+
+- Japanese/English quickstarts now put automatic recovery from the device's remembered
+  official login first. In-game transfer and browser recovery are fallback options;
+  existing-ZIP import instructions live in DATA.md and require an empty installation.
+- Removed automatically handled story-gap implementation details from the quickstart
+  and data guide; the implementation history remains in this changelog.
+- Clarified DATA.md as the backup, migration and advanced-setup reference, and explained
+  why a prepared installation plus database backup contains more than a source ZIP.
+- Documentation only; gameplay behavior and the 30-group inventory are unchanged.
+
 ## October 2, 2026 — Reconnect after laptop sleep or an IP change
 
 - Added Japanese/English recovery steps for checking the computer's current LAN IP,
