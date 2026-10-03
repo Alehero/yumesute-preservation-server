@@ -55,3 +55,12 @@ CDN or modify a real account. `uv run --locked python tests/check_backup_restore
 PostgreSQL cluster, verifies a real dump/restore and shuts it down afterward. It requires
 PostgreSQL tools including initdb and pg_ctl. Clean-device, Windows and full-size backup
 validation remain open.
+
+`check_song_shop.py` requires a disposable clone named
+`yumesute_shop_regression_20261003` with one recovered official account, missing default
+song rows for 224/237/260, enough tickets and a cleared OLIVIER level of at least IV.
+It changes only that disposable database: checks default ownership materialization,
+retained existing progress, purchases, duplicate/insufficient-ticket protection and
+expired drops against the pinned master. Recreate the clone before rerunning.
+Never point it at a save you intend to keep. Pure date-boundary checks also run in
+the normal unit suite.

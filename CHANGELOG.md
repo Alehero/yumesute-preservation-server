@@ -11,6 +11,24 @@ pinned to `3cfca23267fb0f79d7336732db768e1510f20313`.
 [TeamOpenSirius/OpenSiriusServer](https://github.com/TeamOpenSirius/OpenSiriusServer)
 was an independent protocol reference, not a second backend merged into this release.
 
+## October 3, 2026 — Imported-song purchases and expired live rewards
+
+- Fixed OLIVIER purchases for default-owned songs omitted from imported account
+  records, including **黄昏時、夏の余韻**, **誰ガ為ノサダメ**, and **雨に願えば**.
+  Login and chart purchasing now materialize missing default-song ownership for
+  imported saves too. Existing ownership/progression is retained; the starter-only
+  STELLA/OLIVIER fallback is not granted to imported accounts.
+- Live-drop frames now honor start-inclusive/end-exclusive availability windows.
+  Previously, expired seasonal lottery tickets, Easter eggs and other historical
+  drops could appear on normal results. Permanent rewards remain available, and
+  already-owned items are not removed. This does not implement historical events
+  or establish exact reward odds/amount parity.
+- **Server-tested on a disposable save clone:** all three chart purchases, one-ticket
+  charging, duplicate rejection, insufficient-ticket protection, idempotent ownership
+  repair and retained existing progress. Reward filtering and date boundaries tested;
+  all **51 unit tests passed**. **Deployment and device retest pending.**
+- Feature inventory remains **30 groups**, built around the pinned upstream backend.
+
 ## October 3, 2026 — Stop duplicate servers before restarting
 
 - Documentation only: Japanese/English troubleshooting now explains how to identify

@@ -863,6 +863,8 @@ async def buy_chart(request: Request, mLiveId: int):
             chart = master("live_master", mLiveId)
             if not chart or int(chart.difficulty) != 5:
                 raise Rejected()
+            from starter_music import grant_default_music
+            await grant_default_music(s.conn, s.uid)
             row = await s.one("Music", musicMasterId=chart.music_master_id)
             if not row or not row["isPossession"] or row["olivierReleaseStatus"] == 3:
                 raise Rejected()
