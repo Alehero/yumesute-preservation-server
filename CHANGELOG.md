@@ -26,7 +26,8 @@ was an independent protocol reference, not a second backend merged into this rel
 - **Server-tested on a disposable save clone:** all three chart purchases, one-ticket
   charging, duplicate rejection, insufficient-ticket protection, idempotent ownership
   repair and retained existing progress. Reward filtering and date boundaries tested;
-  all **51 unit tests passed**. **Deployment and device retest pending.**
+  all **51 unit tests passed**. **Deployed to the local test server:** live account
+  data confirms all three charts are purchasable. **Device retest pending.**
 - Feature inventory remains **30 groups**, built around the pinned upstream backend.
 
 ## October 3, 2026 — Stop duplicate servers before restarting
