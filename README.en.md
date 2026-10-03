@@ -152,13 +152,81 @@ an account; do not delete a working save to make room for it.
 ## Troubleshooting
 
 - **Stopped connecting after sleep or a Wi-Fi change:** follow the recovery steps below; the computer may have received a different LAN IP address.
-- **Port conflict:** defaults are backend TCP 8125 (loopback), WireGuard UDP 51822, certificate TCP 8766, and PostgreSQL TCP 55433 (loopback). Use `uv run --locked python server.py start --port 8126 --wg-port 51823 --cert-port 8767`. Change DB port in both `.env` and `vendor/server-of-dreams/config.yml` before initialization.
+- **Port conflict / “Error logged during startup”:** another server may already be running. Follow [Stop a duplicate server](#stop-a-duplicate-server-port-conflict) below before changing ports. Defaults: backend TCP 8125, WireGuard UDP 51822, certificate TCP 8766, PostgreSQL TCP 55433.
 - **Certificate/tunnel failure:** check same LAN, guest-network isolation, computer firewall, and full certificate trust. Allow only the required traffic on your home network. Internet port forwarding is unnecessary.
 - **Missing images/songs or HTTP 404:** check `uv run --locked python server.py doctor` and `logs/backend.log`. Use the repair command below for covered media; files unavailable from the CDN still need another local source. Do not clear the app cache to troubleshoot this.
 - **EOS after linking on 3.0.0:** use the compatible client version described in the [rollback guide](IOS-ROLLBACK.en.md).
 - **Database connection failure:** check Docker Desktop and `docker compose ps`. Changing `.env` does not change a password inside an existing database volume. Do not casually delete the volume.
 
 See [DATA.md](DATA.md) for backups, data layout, and existing PostgreSQL. Issues in Japanese or English are welcome. Include OS/client versions, the failing step, and a sanitized error. **Do not upload account ZIPs, private folders, QR codes, or linking credentials.**
+
+### Stop a duplicate server (port conflict)
+
+`Error logged during startup` is a general message. Check the terminal and
+`logs/backend.log` for **address already in use**, **Errno 48/98**, or **WinError
+10048** before treating it as a port conflict. A server started in another terminal,
+a launcher window, or a background session can still own the ports.
+
+1. Finish any game action and turn the device's WireGuard tunnel off.
+2. In the terminal/window running the old server, press **Control+C** and wait for
+   it to exit. Closing the setup browser tab does **not** stop the server. Start only
+   one copy of the same installation.
+3. If you cannot find that window, identify the process before stopping anything.
+
+**macOS — Terminal:**
+
+```sh
+lsof -nP -iTCP:8125 -iTCP:8766 -iUDP:51822
+ps -p 12345 -o pid=,ppid=,command=
+```
+
+Replace `12345` with a PID from `lsof`; do not paste it unchanged. Check the command
+and project path. A `tools/serve.py` entry is the backend child: inspect its PPID
+with the same `ps` command to find this installation's `python server.py start`
+parent. After confirming the correct parent PID, stop it gracefully:
+
+```sh
+kill -INT 12345
+```
+
+Use the confirmed **parent** PID here. Wait a few seconds and rerun `lsof`.
+If a verified orphaned backend remains, inspect and stop that specific PID too.
+Do not use `killall python`, `pkill python`, or force-kill unrelated processes.
+
+**Windows — PowerShell:**
+
+```powershell
+Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.LocalPort -in 8125,8766 } | Select-Object LocalAddress,LocalPort,OwningProcess
+Get-NetUDPEndpoint -ErrorAction SilentlyContinue | Where-Object { $_.LocalPort -eq 51822 } | Select-Object LocalAddress,LocalPort,OwningProcess
+Get-CimInstance Win32_Process -Filter "ProcessId = 12345" | Select-Object ProcessId,ParentProcessId,CommandLine
+```
+
+Replace `12345` with the reported owning PID. Inspect the parent as needed to find
+this installation's `server.py start` process. Prefer **Control+C** in its console.
+If the console is unavailable, after checking the process and path, stop only that
+server's process tree with `taskkill /PID 12345 /T` using the confirmed parent PID.
+This is a fallback termination, not a guarantee of graceful shutdown. Recheck the
+ports afterward. Never end every Python process. Windows steps are not device-tested.
+
+Once the old server has exited, run from the same installation folder:
+
+```sh
+uv run --locked python server.py start
+```
+
+Wait for **Local server tunnel ready**, then enable the device tunnel again.
+If the port belongs to another application that needs to stay running, choose free
+ports instead, for example:
+
+```sh
+uv run --locked python server.py start --port 8126 --wg-port 51823 --cert-port 8767
+```
+
+Update the device's WireGuard endpoint port (or re-import the generated QR), and use
+the new certificate URL shown in setup. Do not change ports merely to run two copies
+against the same save. A database-port conflict is separate: inspect `docker compose
+ps` and your PostgreSQL configuration; do not kill PostgreSQL or delete its volume to
+free a game-server port. No account reset or certificate replacement is needed.
 
 ### Windows: certificate downloads on the PC, but hangs on the phone
 

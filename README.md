@@ -146,13 +146,79 @@ ZIPを保存した後、必要であれば15分以内に「ローカルに取り
 ## 困ったとき
 
 - **スリープ・Wi-Fi再接続後につながらない**：PCのLAN IPアドレスが変わっている可能性があります。下記の復旧手順を確認してください。
-- **ポート競合**：既定はバックエンドTCP 8125（ループバックのみ）、WireGuard UDP 51822、証明書TCP 8766、PostgreSQL TCP 55433（ループバックのみ）。`uv run --locked python server.py start --port 8126 --wg-port 51823 --cert-port 8767` で変更できます。DBは初期化前に `.env` と `vendor/server-of-dreams/config.yml` の両方を変更します。
+- **ポート競合／「Error logged during startup」**：別のサーバーが既に起動している場合があります。ポート変更の前に、下記の「二重起動・ポート競合」を確認してください。既定はバックエンドTCP 8125、WireGuard UDP 51822、証明書TCP 8766、PostgreSQL TCP 55433です。
 - **証明書／トンネルが使えない**：同じLAN、ゲストWi-Fiの端末間隔離、PCのファイアウォール、完全な信頼を確認。必要な通信のみ家庭内ネットワークで許可してください。インターネットへのポート公開は不要です。
 - **画像・楽曲が出ない／404**：`uv run --locked python server.py doctor` と `logs/backend.log` を確認。ゲーム素材が不足している可能性があります。全ファイル数が多くても完全性の保証にはなりません。アプリのキャッシュは消さないでください。
 - **3.0.0で連携後もサービス終了のお知らせが表示される**：[旧版への戻し方](IOS-ROLLBACK.md)を参照し、対応版のクライアントを使用してください。
 - **DB接続失敗**：Docker Desktopの起動と `docker compose ps` を確認。既存ボリュームのパスワードは `.env` の変更だけでは変わりません。安易にボリュームを削除しないでください。
 
 [バックアップ・データ形式・既存PostgreSQL](DATA.md)も参照してください。不具合報告は日本語・英語のどちらでも構いません。OS・アプリ版・止まった手順と、秘密情報を除いたエラーを記載してください。**アカウントZIP、privateフォルダー、QR、連携情報は公開しないでください。**
+
+### 二重起動・ポート競合
+
+`Error logged during startup` だけでは原因は特定できません。ターミナルと
+`logs/backend.log` に **address already in use**、**Errno 48/98**、
+**WinError 10048** があるか確認してください。別のターミナル、起動用ウィンドウ、
+バックグラウンドで動いているサーバーがポートを使用している場合があります。
+
+1. ゲーム内の操作を終え、端末のWireGuardトンネルをオフにします。
+2. 古いサーバーを起動したターミナルで **Control+C** を押し、終了を待ちます。
+   セットアップページのタブを閉じてもサーバーは停止しません。同じ環境を二重起動しないでください。
+3. 起動元のウィンドウが見つからない場合は、停止する前にプロセスを確認します。
+
+**macOS：ターミナル**
+
+```sh
+lsof -nP -iTCP:8125 -iTCP:8766 -iUDP:51822
+ps -p 12345 -o pid=,ppid=,command=
+```
+
+`12345` は例です。`lsof` に表示されたPIDに置き換え、コマンドとフォルダーのパスを
+確認してください。`tools/serve.py` は子プロセスです。そのPPIDを同じ `ps` コマンドで
+調べ、この環境の `python server.py start` を実行している親プロセスを特定します。
+確認した**親プロセスのPID**で、次を実行します。
+
+```sh
+kill -INT 12345
+```
+
+数秒待ち、もう一度 `lsof` で確認してください。終了後も子プロセスだけ残っている場合は、
+パスを確認したうえで、そのPIDのみ停止します。`killall python` や `pkill python` で
+無関係なPythonまでまとめて停止しないでください。
+
+**Windows：PowerShell**
+
+```powershell
+Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.LocalPort -in 8125,8766 } | Select-Object LocalAddress,LocalPort,OwningProcess
+Get-NetUDPEndpoint -ErrorAction SilentlyContinue | Where-Object { $_.LocalPort -eq 51822 } | Select-Object LocalAddress,LocalPort,OwningProcess
+Get-CimInstance Win32_Process -Filter "ProcessId = 12345" | Select-Object ProcessId,ParentProcessId,CommandLine
+```
+
+`12345` を表示されたPIDに置き換え、必要なら親プロセスも調べて、この環境の
+`server.py start` を特定します。起動元のコンソールで **Control+C** を押す方法を優先します。
+コンソールが見つからない場合のみ、確認した親PIDで `taskkill /PID 12345 /T` を使い、
+そのサーバーと子プロセスを終了します。通常の終了処理が完了する保証はないため、
+終了後にポートを再確認してください。Python全体を一括終了しないでください。
+Windowsでの実機確認は未実施です。
+
+停止後、同じインストール先のフォルダーで起動します。
+
+```sh
+uv run --locked python server.py start
+```
+
+**Local server tunnel ready** を確認してから、端末のトンネルを有効にしてください。
+別の必要なアプリがポートを使用している場合は、空いているポートを指定できます。
+
+```sh
+uv run --locked python server.py start --port 8126 --wg-port 51823 --cert-port 8767
+```
+
+端末のWireGuardエンドポイントのポートを変更するか、新しいQRを読み直し、証明書URLも
+セットアップに表示されたものを使います。同じセーブで二重起動するための変更は避けてください。
+DBポートの競合は別途 `docker compose ps` とPostgreSQLの設定を確認します。
+ゲームサーバーのポートを空ける目的でPostgreSQLを停止したり、DBボリュームを削除したり
+する必要はありません。アカウントのリセットや証明書の作り直しも不要です。
 
 ### Windows：PCでは証明書を取得できるのに、スマートフォンでは読み込みが終わらない
 

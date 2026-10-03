@@ -11,6 +11,17 @@ pinned to `3cfca23267fb0f79d7336732db768e1510f20313`.
 [TeamOpenSirius/OpenSiriusServer](https://github.com/TeamOpenSirius/OpenSiriusServer)
 was an independent protocol reference, not a second backend merged into this release.
 
+## October 3, 2026 — Stop duplicate servers before restarting
+
+- Documentation only: Japanese/English troubleshooting now explains how to identify
+  port owners, stop the correct server parent process, verify released ports, and
+  restart one instance. Includes Mac and Windows commands and alternate-port guidance.
+- **Mac-confirmed:** a duplicate test-server instance caused address-in-use errors;
+  stopping it released the ports. Backend and certificate HTTP checks returned 200
+  before shutdown. Windows termination instructions remain unverified on-device.
+- No gameplay changes or new automated tests for this documentation update.
+  Feature inventory remains **30 groups**; no accounts or certificates are reset.
+
 ## October 2, 2026 — Windows network and certificate troubleshooting
 
 - Documentation only: added English/Japanese troubleshooting for Ethernet/Public versus Private network profiles, LAN-scoped firewall rules, and direct certificate download with WireGuard off.
