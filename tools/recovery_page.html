@@ -2,7 +2,7 @@
 <title>アカウント復元 / Account recovery</title>
 <style>body{font:17px system-ui,sans-serif;max-width:720px;margin:48px auto;padding:0 24px;background:#f7f7fa;color:#202534}h1{font-size:28px}section{background:white;border:1px solid #ddd;border-radius:14px;padding:24px;margin:24px 0}label{display:block;margin:16px 0}input:not([type=checkbox]){box-sizing:border-box;width:100%;padding:12px;font:inherit;border:1px solid #aaa;border-radius:6px}button{font:inherit;padding:12px 18px;border:0;border-radius:8px;background:#384bb0;color:white;cursor:pointer}button:disabled{opacity:.5;cursor:default}.en{color:#555;font-size:15px}#status{white-space:pre-line}a{color:#384bb0}</style>
 <section><h2>ローカルアカウント / Local account</h2>
-<label><input type="checkbox" id="preserve"> 公式ログイントークンを暗号化して保存（任意）<br><span class="en">Save official login tokens encrypted on this computer (optional). Applies to future recoveries/logins; disabling keeps existing backups.</span></label>
+<label><input type="checkbox" id="preserve"> 公式ログイントークンを暗号化して保存（初期設定：有効）<br><span class="en">Save official login tokens encrypted on this computer (enabled by default; you can turn this off). Applies to future recoveries/logins; disabling keeps existing backups.</span></label>
 <label>アカウント / Account <select id="accounts"></select></label>
 <button id="local-save">現在のセーブをエクスポート / Export account</button>
 <p class="en">Local progress ZIP; no raw official token. Keep it private. / 現在の進行状況を保存します。ZIPは公開しないでください。</p>

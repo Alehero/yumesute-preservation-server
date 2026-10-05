@@ -243,8 +243,8 @@ The ZIP is marked as local, unverified progress and contains no raw official tok
 It uses the existing account-import format; media, photos stored as files, and a full
 installation backup remain separate. A copy is kept in `private/local-exports/`.
 
-Enable **Save official login tokens encrypted** before future official recoveries.
-This is off by default. It also preserves an official token if a client still sends one
+**Save official login tokens encrypted** is enabled by default, including automatic
+recovery on first login. No recovery-page visit is required. It also preserves an official token if a client still sends one
 that matches a previously recovered identity or the legacy imported token hash.
 These remembered-token matches are labeled as not revalidated; local JWTs and outage
 starter mappings are excluded. Normal local login still makes no official request.
@@ -279,7 +279,8 @@ the official service while available; local-save uploads should be labeled separ
 公式トークンは含みません。既存のインポート形式に対応しますが、画像・楽曲・写真ファイル等は
 別途バックアップしてください。ZIPのコピーは `private/local-exports/` にも残ります。
 
-「公式ログイントークンを暗号化して保存」は初期状態で無効です。有効にすると、以後の公式復元や、
+「公式ログイントークンを暗号化して保存」は初期状態で有効です。初回ログイン時の自動復元も対象で、
+事前に復元ページを開く必要はありません。以後の公式復元や、
 以前復元した公式トークンでのログイン時に保存します。ローカル用トークンは対象外です。
 無効にしても保存済みファイルは削除されません。「認証情報を別途エクスポート」では、ゲームの
 パスワードとは別の12文字以上のパスフレーズを設定します。忘れると復号できません。
@@ -292,3 +293,10 @@ the official service while available; local-save uploads should be labeled separ
 
 `private/official-credentials/` の鍵と暗号化ファイルは両方保管してください。認証情報やセーブを
 公開しないでください。トークンの将来の有効性や、改変のないセーブであることを保証する機能ではありません。
+
+Upgrading from the earlier opt-in release enables preservation when no explicit `disabled`
+marker exists. That release did not record an opt-out separately from an unset preference;
+users who want it off should uncheck the option after upgrading.
+
+以前の版から更新すると保存が有効になります。以前の版では未設定と無効を区別していなかったため、
+保存を希望しない場合は更新後にチェックを外してください。以後、その設定は再起動後も保持されます。

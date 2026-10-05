@@ -1,5 +1,5 @@
 """Offline integration checks against an explicitly named disposable save clone."""
-import argparse,asyncio,json,re,sys,tempfile,zipfile,io
+import argparse,asyncio,json,re,sys,tempfile,zipfile,io,uuid
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path[:0]=[str(ROOT/'tools'),str(ROOT/'vendor/server-of-dreams'),str(ROOT)]
@@ -33,7 +33,7 @@ async def main(name):
         await c.conn.execute("INSERT INTO preservation_credentials VALUES($1,$2,'starter-fallback') ON CONFLICT DO NOTHING",credential_key('token','fake-fallback'),uid)
     with tempfile.TemporaryDirectory() as folder:
         vault=TokenVault(folder);official=Official();recovery=Recovery(db,{'mode':'fresh','user_id':1,'transfer':{'code':'local'}},official,vault)
-        await recovery.setup();vault.enable(True)
+        await recovery.setup();assert vault.enabled
         assert await recovery.local_token_uid(make_jwt(uid))==uid and not vault.has(uid)
         assert await recovery.local_token_uid('fake-fallback')==uid and not vault.has(uid)
         assert await recovery.local_token_uid('fake-previously-official')==uid and vault.has(uid)
@@ -71,7 +71,7 @@ async def main(name):
                 assert await c.conn.fetchval('SELECT "playerRank" FROM "user" WHERE "userId"=$1',uid)==before
         # Unknown credential recovery preserves its token after an insert-only import.
         from models import AuthenticatePayload
-        assert await recovery.resolve(auth=AuthenticatePayload(login_token='new-test-token'))==uid
+        assert await recovery.resolve(auth=AuthenticatePayload(login_token='new-test-token-'+uuid.uuid4().hex))==uid
         assert vault.read(uid)['official_login_token']=='fresh-official-token'
     await db.close()
     print('PASS: current merged save ZIP, credential encryption, CSRF/host checks, no local-token/fallback capture, local-first EOS, progress unchanged')

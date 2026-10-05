@@ -1,4 +1,4 @@
-"""Opt-in local credential vault; portable exports use a separate passphrase key.
+"""Default-on local credential vault; portable exports use a separate passphrase key.
 
 Encryption protects stored credentials, not the authenticity of player progress.
 """
@@ -50,11 +50,13 @@ class TokenVault:
 
     @property
     def enabled(self):
-        return (self.root / 'enabled').is_file()
+        return not (self.root / 'disabled').is_file()
 
     def enable(self, enabled):
-        if enabled: private_write(self.root / 'enabled', b'1')
-        else: (self.root / 'enabled').unlink(missing_ok=True)
+        if enabled: (self.root / 'disabled').unlink(missing_ok=True)
+        else: private_write(self.root / 'disabled', b'1')
+        # Older releases used only an opt-in marker; absence now means enabled.
+        (self.root / 'enabled').unlink(missing_ok=True)
 
     def cipher(self):
         path = self.root / 'key'

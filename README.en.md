@@ -125,8 +125,8 @@ port if you changed it. Enter your **official linking ID/password**, not your Ap
 ID or local server credentials. The page downloads a verified ZIP and also keeps a
 private copy under `private/recovered-exports`; this does not change your save.
 
-The same page now offers **Export account** for current local progress, optional
-encrypted official-token preservation, and a separate passphrase-protected credential
+The same page now offers **Export account** for current local progress, default-on
+encrypted official-token preservation (with an opt-out), and a separate passphrase-protected credential
 export. See [backup and recovery details](DATA.md#export-current-progress-and-preserve-credentials--セーブと認証情報の保存), including options for users already connected locally.
 
 After saving the ZIP, optionally choose **Import locally** within 15 minutes.

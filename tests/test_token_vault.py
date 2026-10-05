@@ -9,19 +9,24 @@ from token_vault import TokenVault, portable_export, open_portable
 from cryptography.fernet import InvalidToken
 
 class VaultTests(unittest.TestCase):
-    def test_opt_in_restart_disable_and_permissions(self):
+    def test_default_on_restart_disable_and_permissions(self):
         with tempfile.TemporaryDirectory() as root:
             vault=TokenVault(root)
             vault.save(7,'test-official-secret','test')
-            self.assertFalse(vault.has(7))
-            vault.enable(True);vault.save(7,'test-official-secret','test')
+            self.assertTrue(vault.has(7))
             restored=TokenVault(root)
             self.assertEqual(restored.read(7)['official_login_token'],'test-official-secret')
-            for name in ['key','7.enc','enabled']:
+            for name in ['key','7.enc']:
                 self.assertNotIn(b'test-official-secret',(vault.root/name).read_bytes())
                 self.assertEqual(stat.S_IMODE((vault.root/name).stat().st_mode),0o600)
-            vault.enable(False);vault.save(7,'replacement','test')
+            vault.enable(False)
+            self.assertFalse(TokenVault(root).enabled)
+            vault.save(7,'replacement','test')
             self.assertEqual(restored.read(7)['official_login_token'],'test-official-secret')
+            vault.enable(True)
+            self.assertTrue(TokenVault(root).enabled)
+            vault.save(7,'replacement','test')
+            self.assertEqual(restored.read(7)['official_login_token'],'replacement')
 
     def test_portable_password_and_tampering(self):
         record={'user_id':7,'official_login_token':'test-secret'}
