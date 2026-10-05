@@ -25,6 +25,7 @@ from scripts._sirius import _unpack_all, _decompress
 from preservation_dates import preserved_master
 from account_compat import merge_account
 from circle_compat import install as install_circle_compat
+from room_compat import install as install_room_compat
 from starter_login import register_starter, authenticate_starter
 import routes.account
 import routes.data
@@ -112,6 +113,7 @@ async def register_local_starter(request:Request):
 
 app.router.routes[0:0]=router.routes
 install_circle_compat(app)
+install_room_compat(app)
 from reroll import install as install_reroll
 install_reroll(app)
 from preservation_gift import install as install_gift
