@@ -30,7 +30,8 @@ import routes.account
 import routes.data
 ACCOUNT = json.loads((ROOT/'private/account.json').read_text())
 from official_recovery import Recovery, RecoveryError, Rejected
-RECOVERY = Recovery(app, ACCOUNT)
+from token_vault import TokenVault
+RECOVERY = Recovery(app, ACCOUNT, vault=TokenVault(ROOT))
 
 @app.exception_handler(RecoveryError)
 async def recovery_failure(request, exc):
@@ -56,6 +57,7 @@ async def authenticate(payload, app):
         async with app.acquire_db() as conn:
             row=await conn.fetchrow(get_account_by_id(ACCOUNT['user_id']))
             if row:
+                RECOVERY.preserve_token(ACCOUNT['user_id'],payload.login_token,'legacy-hash-match; not revalidated')
                 token=make_session_jwt(ACCOUNT['user_id'],'AppStore')
                 await conn.execute(update_account_token(ACCOUNT['user_id'],token))
                 return AuthenticateResult(token=token,ban_level=row.banLevel)
@@ -70,6 +72,9 @@ async def user_data(app,uid):
     await ensure_gift(app, uid)
     from starter_music import ensure_starter_music
     await ensure_starter_music(app, uid, ACCOUNT)
+    return await export_user_data(app,uid)
+
+async def export_user_data(app,uid):
     current=await database_user_data(app,uid)
     current=await RECOVERY.merge(uid,current)
     if uid != ACCOUNT['user_id'] or ACCOUNT['mode']!='import': return current
@@ -144,7 +149,7 @@ async def local_files(request,call_next):
     return response
 
 from recovery_page import install as install_recovery_page
-install_recovery_page(app,RECOVERY,ROOT,int(os.environ.get('YUMESUTE_PORT','8125')))
+install_recovery_page(app,RECOVERY,ROOT,int(os.environ.get('YUMESUTE_PORT','8125')), snapshot=export_user_data)
 
 if __name__=='__main__':
     import uvicorn

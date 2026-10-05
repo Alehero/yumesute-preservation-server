@@ -7,13 +7,18 @@ import secrets
 import time
 from pathlib import Path
 from fastapi import Request
-from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse, Response
 from models import TakeOverAccountPayload
 from exporter import save_snapshot
 from official_recovery import RecoveryError, Unavailable, Rejected, credential_key
 
 
-def install(app, recovery, root, port):
+def install(app, recovery, root, port, snapshot=None):
+    from token_vault import TokenVault, portable_export
+    from protocol import inspect_snapshot
+    from helpers.msgpack import respond
+    if recovery.vault is None: recovery.vault=TokenVault(root)
+    vault=recovery.vault
     csrf = secrets.token_urlsafe(32)
     staged = {}
     lock = asyncio.Lock()
@@ -68,6 +73,8 @@ def install(app, recovery, root, port):
             async with lock:
                 # Explicit official retry: deliberately bypass local credential lookup; no fallback.
                 raw,token=await recovery.official.recover(transfer=transfer)
+                if vault.enabled:
+                    vault.save(inspect_snapshot(raw)['user_id'],token,'official-api-authenticated-recovery')
                 archive,manifest=save_snapshot(root/'private/recovered-exports',raw,
                     login_hash=hashlib.sha256(token.encode()).hexdigest(),source='official-api-authenticated-recovery')
                 clean()
@@ -97,3 +104,45 @@ def install(app, recovery, root, port):
             staged.pop(stage,None)
             return JSONResponse({'ok':True},headers=headers)
         except Exception:return error(RecoveryError())
+
+    @app.get('/recovery/accounts')
+    async def accounts(request:Request):
+        if not allowed(request):return JSONResponse({'error':'Forbidden'},403)
+        async with recovery.app.acquire_db() as c:
+            rows=await c.conn.fetch('SELECT a."userId",p.name FROM accounts a LEFT JOIN user_profile p ON p."userId"=a."userId" ORDER BY a."userId"')
+        return JSONResponse({'preserve_tokens':vault.enabled,'accounts':[
+            {'id':str(r['userId']),'name':r['name'],'credential_saved':vault.has(r['userId'])} for r in rows]},headers=headers)
+
+    @app.post('/recovery/local')
+    async def local(request:Request):
+        if not allowed(request,True):return JSONResponse({'error':'Forbidden'},403)
+        body=await request.body()
+        if len(body)>4096:return JSONResponse({'error':'Invalid input'},400,headers=headers)
+        try:
+            data=json.loads(body)
+            action=data.get('action')
+            if action == 'preferences':
+                if type(data.get('enabled')) is not bool:raise ValueError()
+                vault.enable(data['enabled'])
+                return JSONResponse({'ok':True},headers=headers)
+            uid=int(data['user_id'])
+            async with recovery.app.acquire_db() as c:
+                if not await c.conn.fetchval('SELECT EXISTS(SELECT 1 FROM accounts WHERE "userId"=$1)',uid):raise ValueError()
+            if action == 'credential':
+                record=vault.read(uid)
+                encrypted=await asyncio.to_thread(portable_export,record,data.get('passphrase'))
+                return Response(encrypted,media_type='application/json',headers={**headers,
+                    'Content-Disposition':'attachment; filename="official-credential.encrypted.json"'})
+            if action != 'save' or snapshot is None:raise ValueError()
+            # One consistent database snapshot; exporting never grants gifts or mutates progress.
+            from contextlib import asynccontextmanager
+            async with recovery.app.acquire_db() as c:
+                async with c.conn.transaction(isolation='repeatable_read',readonly=True):
+                    class Bound:
+                        @asynccontextmanager
+                        async def acquire_db(self):yield c
+                    raw=respond(await snapshot(Bound(),uid)).body
+            archive,_=save_snapshot(root/'private/local-exports',raw,source='local-private-server; unverified-progress')
+            return FileResponse(archive,media_type='application/zip',filename=archive.name,headers=headers)
+        except Exception:
+            return JSONResponse({'error':'Export failed. Check the account, saved credential and passphrase (12+ characters). / エクスポートできませんでした。アカウント・認証情報・パスフレーズ（12文字以上）を確認してください。'},400,headers=headers)

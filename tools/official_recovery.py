@@ -103,8 +103,9 @@ class OfficialClient:
 
 
 class Recovery:
-    def __init__(self,app,account,official=None):
+    def __init__(self,app,account,official=None, vault=None):
         self.app,self.account,self.official=app,account,official or OfficialClient()
+        self.vault=vault
         self.ready=False
         self.lock=asyncio.Lock()
 
@@ -129,7 +130,22 @@ class Recovery:
                 if await c.fetchrow(get_account_by_id(uid)):return uid
             # A locally signed token with no save is corruption, not a recovery opportunity.
             raise RecoveryError('LocalAccountMissing')
-        return await self.lookup(credential_key('token',token))
+        key=credential_key('token',token)
+        uid=await self.lookup(key)
+        if uid is not None and self.vault and self.vault.enabled:
+            async with self.app.acquire_db() as c:
+                source=await c.conn.fetchval('SELECT source FROM preservation_credentials WHERE digest=$1',key)
+            if source == 'official':
+                self.preserve_token(uid,token,'previously-recovered-token; not revalidated')
+        return uid
+
+    def preserve_token(self,uid,token,source):
+        if self.vault:
+            try: self.vault.save(uid,token,source)
+            except Exception:
+                # Disk/key failure must not break a successful login; never log credentials.
+                import logging
+                logging.getLogger(__name__).warning('Official credential backup failed; check local vault permissions/key.')
 
     async def session(self,uid):
         async with self.app.acquire_db() as c:
@@ -153,7 +169,9 @@ class Recovery:
                 raw,login_token=await self.official.recover(auth=auth,transfer=transfer)
             except (Unavailable,TimeoutError):
                 return await self.fallback(key)
-            return await self.import_snapshot(raw,[key,credential_key('token',login_token)])
+            uid=await self.import_snapshot(raw,[key,credential_key('token',login_token)])
+            self.preserve_token(uid,login_token,'official-api-authenticated-recovery')
+            return uid
 
     async def fallback(self,key):
         # Never replace any save. Only associate an unrecognized credential with the

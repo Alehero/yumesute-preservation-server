@@ -64,3 +64,8 @@ retained existing progress, purchases, duplicate/insufficient-ticket protection 
 expired drops against the pinned master. Recreate the clone before rerunning.
 Never point it at a save you intend to keep. Pure date-boundary checks also run in
 the normal unit suite.
+
+`check_account_exports.py --database yumesute_export_checks_<suffix>` requires a
+disposable clone of a recovered installation. It uses synthetic credentials and
+offline official-service stubs; never point it at a live database. It checks export
+round trips, credential preservation, local-first outages and unchanged progress.
