@@ -11,6 +11,44 @@ pinned to `3cfca23267fb0f79d7336732db768e1510f20313`.
 [TeamOpenSirius/OpenSiriusServer](https://github.com/TeamOpenSirius/OpenSiriusServer)
 was an independent protocol reference, not a second backend merged into this release.
 
+## October 5, 2026 — Preserve official tokens by default
+
+- Encrypted official-token preservation is now enabled by default, including first-login
+  automatic recovery. Players do not need to visit the recovery page beforehand.
+  An explicit opt-out persists across restarts and retains existing backups.
+- Upgrading the earlier opt-in release also enables preservation: it did not distinguish
+  an unset preference from an explicit opt-out. Players who want it disabled should
+  uncheck the setting after updating. Already-lost tokens cannot be reconstructed;
+  saved credentials remain subject to official expiration or revocation.
+- **Server-tested:** 53 unit tests and disposable-database export/recovery checks passed,
+  including default-on capture and persistent opt-out. **Deployed locally:** recovery
+  page confirms preservation enabled. No new official captures or device confirmation.
+- Feature inventory remains **30 gameplay groups**, using the pinned upstream backend.
+
+## October 5, 2026 — Local-save export and optional credential preservation
+
+- The local recovery page now exports current account progress as a compatible ZIP,
+  including changes made after official recovery. Save exports contain no raw official
+  token and are labeled as local, unverified progress; media and filesystem photos
+  still require separate backups.
+- Added opt-in encrypted storage for official login tokens and a separate, passphrase-
+  protected credential export. Existing clients can supply a remembered official token;
+  otherwise the official recovery form can retrieve one while the service remains
+  available. Stored hashes cannot be reversed. Re-retrieval does not overwrite local
+  progress, and recognized local identities still work without official requests.
+- Credentials may expire. These exports do not certify an unmodified save or implement
+  cloud migration. The local encryption key must be backed up with the vault. Disabling
+  preservation stops future writes without deleting saved credentials.
+- **Implemented/server-tested:** 53 unit tests passed, plus disposable-database checks
+  for current-save round trips, encrypted credential downloads, wrong-password/tamper
+  rejection, host/origin/CSRF restrictions, official-token recapture, refresh without
+  overwriting progress, and local-first login during simulated official unavailability.
+- **Deployed locally:** recovery page and live-account ZIP export passed HTTP checks.
+  Browser interaction and subsequent in-game token capture await user confirmation.
+  No new official captures or device-confirmed gameplay behavior in this batch.
+- Feature inventory remains **30 gameplay groups**, based on the pinned upstream
+  backend; this batch improves preservation and migration preparation.
+
 ## October 3, 2026 — Imported-song purchases and expired live rewards
 
 - Fixed OLIVIER purchases for default-owned songs omitted from imported account

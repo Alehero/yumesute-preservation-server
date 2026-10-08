@@ -119,10 +119,15 @@ On Mac, if double-clicking the launcher is blocked, use the terminal command abo
 If in-game Data Link is unsuccessful or you want a backup before importing, use the browser recovery page.
 
 With the server running, open **[Account recovery](http://127.0.0.1:8125/recovery)**
+
 on the **server computer**, or follow its setup-page link. Use the chosen backend
 port if you changed it. Enter your **official linking ID/password**, not your Apple
 ID or local server credentials. The page downloads a verified ZIP and also keeps a
 private copy under `private/recovered-exports`; this does not change your save.
+
+The same page now offers **Export account** for current local progress, default-on
+encrypted official-token preservation (with an opt-out), and a separate passphrase-protected credential
+export. See [backup and recovery details](DATA.md#export-current-progress-and-preserve-credentials--セーブと認証情報の保存), including options for users already connected locally.
 
 After saving the ZIP, optionally choose **Import locally** within 15 minutes.
 The starter is retained, and progress on an already-recovered official account is

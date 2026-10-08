@@ -232,3 +232,71 @@ in its `private/linking-credentials.txt` through the game's Data Link menu.
 元のZIPと動作中の環境は保持してください。ZIPは保存時点の状態で、その後のローカル進行は含みません。
 新しいサーバーを起動して接続し、通常ログインできなければ、新環境の `private/linking-credentials.txt` にある
 ローカル連携情報をゲームの「データ連携」で入力してください。
+
+
+## Export current progress and preserve credentials / セーブと認証情報の保存
+
+With the server running, open http://127.0.0.1:8125/recovery on the server computer
+(use the configured backend port if different). Select an account and **Export account**
+to download its current local progress, including changes made after official import.
+The ZIP is marked as local, unverified progress and contains no raw official token.
+It uses the existing account-import format; media, photos stored as files, and a full
+installation backup remain separate. A copy is kept in `private/local-exports/`.
+
+**Save official login tokens encrypted** is enabled by default, including automatic
+recovery on first login. No recovery-page visit is required. It also preserves an official token if a client still sends one
+that matches a previously recovered identity or the legacy imported token hash.
+These remembered-token matches are labeled as not revalidated; local JWTs and outage
+starter mappings are excluded. Normal local login still makes no official request.
+Disabling preservation stops new writes but retains existing credential backups.
+
+Use **Export encrypted credential** with a new, strong passphrase of at least 12
+characters. Keep the passphrase separately; losing it means the portable file cannot
+be decrypted. This is a separate `yumesute-official-credential-v1` JSON file encrypted
+with Fernet and a scrypt-derived key (N=32768, r=8, p=1). It is intended for a future
+migration tool; this release does not provide cloud migration or cloud verification.
+
+The local vault lives in `private/official-credentials/`; keep both its `key` and `.enc`
+files in installation backups. POSIX files are created owner-only; Windows users should
+keep the installation in their private user folder. The local key is on the same
+computer: encryption is not protection against someone who can read the entire folder.
+Do not publish credentials, keys, account ZIPs or full backups.
+
+**Already connected?** Old hashes cannot recover the original token. Enable preservation
+and relaunch if the client still remembers its official token. Otherwise, use official
+linking ID/password in the recovery form below the export controls. It can retrieve and
+save a new credential while official retrieval remains available. Downloading does not
+replace local progress; importing again is unnecessary for an existing local account.
+If only a local token remains and official retrieval is unavailable, there is no recovery
+from the stored hash. A current local-save export still preserves progress.
+
+Official tokens can expire or be revoked. Neither encryption nor an upload deadline
+proves a save is unmodified. A future trusted cloud import must fetch data directly from
+the official service while available; local-save uploads should be labeled separately.
+
+サーバー起動中に、サーバーを動かしているPCで http://127.0.0.1:8125/recovery を開きます。
+アカウントを選び「現在のセーブをエクスポート」で、ローカルで進めた分を含むZIPを保存できます。
+公式トークンは含みません。既存のインポート形式に対応しますが、画像・楽曲・写真ファイル等は
+別途バックアップしてください。ZIPのコピーは `private/local-exports/` にも残ります。
+
+「公式ログイントークンを暗号化して保存」は初期状態で有効です。初回ログイン時の自動復元も対象で、
+事前に復元ページを開く必要はありません。以後の公式復元や、
+以前復元した公式トークンでのログイン時に保存します。ローカル用トークンは対象外です。
+無効にしても保存済みファイルは削除されません。「認証情報を別途エクスポート」では、ゲームの
+パスワードとは別の12文字以上のパスフレーズを設定します。忘れると復号できません。
+将来の移行用の形式であり、この版ではクラウドへの移行機能は提供していません。
+
+既に接続済みの場合、ハッシュから元のトークンを復元することはできません。端末に公式トークンが
+残っていれば、保存を有効にして再ログインしてください。残っていなければ、下の公式復元フォームで
+公式の連携ID・パスワードを使い、再取得を試せます。取得だけではローカルの進行は変わりません。
+公式側が取得を受け付けなくなった場合でも、現在のローカルセーブはZIPに保存できます。
+
+`private/official-credentials/` の鍵と暗号化ファイルは両方保管してください。認証情報やセーブを
+公開しないでください。トークンの将来の有効性や、改変のないセーブであることを保証する機能ではありません。
+
+Upgrading from the earlier opt-in release enables preservation when no explicit `disabled`
+marker exists. That release did not record an opt-out separately from an unset preference;
+users who want it off should uncheck the option after upgrading.
+
+以前の版から更新すると保存が有効になります。以前の版では未設定と無効を区別していなかったため、
+保存を希望しない場合は更新後にチェックを外してください。以後、その設定は再起動後も保持されます。
