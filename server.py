@@ -150,8 +150,9 @@ def doctor(a):
     for p in required:
         ok=p.is_file();print(('OK      ' if ok else 'MISSING ')+str(p.relative_to(ROOT)));failed|=not ok
     for kind in ['2d-assets','3d-assets','cri-assets']:
-        p=VENDOR/'_data/assets'/kind/'ios/catalog.json'
-        print(('OK      ' if p.exists() else 'WARNING ')+f'{kind} iOS catalog')
+        for platform in ('iOS','Android'):
+            p=VENDOR/'_data/assets'/kind/platform.lower()/'catalog.json'
+            print(('OK      ' if p.exists() else 'WARNING ')+f'{kind} {platform} catalog')
     for label,p,glob in [('charts',VENDOR/'_data/assets/Notations','*.enc'),('scenes',PRIVATE/'upstream/scenes','*'),('static media',PRIVATE/'static-assets','*')]:
         print(f'{label}: {sum(x.is_file() for x in p.rglob(glob)) if p.exists() else 0} local files (count does not prove completeness)')
     if not failed:
@@ -220,8 +221,10 @@ def main():
     startup_options(sub.add_parser('start'))
     p=sub.add_parser('setup');startup_options(p)
     p.add_argument('--data-dir',default='data');p.add_argument('--skip-download',action='store_true')
+    p.add_argument('--platform',choices=('ios','android','both'),default='ios')
     p.add_argument('--allow-missing',action='store_true',help='Explicitly accept incomplete media after reviewing download failures')
     p=sub.add_parser('repair-data');p.add_argument('--data-dir',default='data')
+    p.add_argument('--platform',choices=('ios','android','both'),default='ios')
     p.add_argument('--allow-missing',action='store_true',help='Install verified files even when other media is unavailable')
     p=sub.add_parser('backup');p.add_argument('--output',required=True,help='New private .zip file; existing files are never overwritten')
     a=parser.parse_args();PRIVATE.mkdir(exist_ok=True,mode=0o700)

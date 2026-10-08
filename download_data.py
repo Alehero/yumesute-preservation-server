@@ -1,4 +1,4 @@
-"""Fetch reference iOS data directly from the official CDN, without a game login."""
+"""Fetch reference iOS/Android data directly from the official CDN, without a game login."""
 import argparse
 import base64
 import hashlib
@@ -24,6 +24,26 @@ CATALOG_HASHES = {
     '3d-assets': 'dd45682b0753da800ce4b8c0032b44a32786c2a13e0dd92ebdfb4760c04cd531',
     'cri-assets': '821c2c382a5dab12688cf9e99271eb1443903255c5abf9b1f134dd0efa7cdfe2',
 }
+
+
+ANDROID_CATALOG_HASHES = {
+    '2d-assets': '8d304b84a8460a98c7bfa3d8abb15cc8154c224121f51f5b7b61eac3cb4cc7f1',
+    '3d-assets': '7bb39b6cf77c6a632f4252d87929d533c88974ddbe31273199a2ad7307fbd4f4',
+    'cri-assets': '1669dc2c4667a44a7f918727fd530ab1bc84877dd797bb0f55fcc1f2624200ce',
+}
+
+
+def platforms(selection):
+    return {'ios': ('iOS',), 'android': ('Android',), 'both': ('iOS', 'Android')}[selection]
+
+
+def catalog_hashes(platform):
+    return CATALOG_HASHES if platform == 'iOS' else ANDROID_CATALOG_HASHES
+
+
+def catalog_path(kind, platform):
+    # Retain the original iOS cache layout for resumable existing downloads.
+    return f'catalogs/{kind}.json.br' if platform == 'iOS' else f'catalogs/android/{kind}.json.br'
 
 
 def safe_path(value):
@@ -96,14 +116,14 @@ def fetch(url, dest, expected=None):
             temp.unlink(missing_ok=True)
 
 
-def bundle_paths(catalog, kind):
+def bundle_paths(catalog, kind, platform="iOS"):
     paths = set()
     for internal in catalog['m_InternalIds']:
         if not internal.endswith('.bundle'):
             continue
         match = re.match(r'^(\d+)#(.*)$', internal)
         resolved = catalog['m_InternalIdPrefixes'][int(match[1])] + match[2] if match else internal
-        prefix = f'http://{kind}/iOS/'
+        prefix = f'http://{kind}/{platform}/'
         if not resolved.startswith(prefix):
             raise ValueError('Unexpected catalog bundle prefix: ' + resolved)
         paths.add(safe_path(resolved[len(prefix):]))
@@ -172,7 +192,7 @@ def save_story_manifest(output, entries):
         temp.replace(path)
 
 
-def run(output, workers=4, limit=0, metadata_only=False, supplemental_only=False):
+def run(output, workers=4, limit=0, metadata_only=False, supplemental_only=False, platform="ios"):
     from server import bootstrap
     if not supplemental_only: bootstrap()
     output = Path(output).expanduser().resolve()
@@ -185,15 +205,16 @@ def run(output, workers=4, limit=0, metadata_only=False, supplemental_only=False
     if not supplemental_only:
         required(BASE + '/master-data/production/' + MANIFEST['uri'], 'master-original.db', MASTER_HASH)
         (output / 'master-manifest.json').write_text(json.dumps(MANIFEST, indent=2))
-        for kind, checksum in CATALOG_HASHES.items():
-            rel = f'catalogs/{kind}.json.br'
-            required(f'{BASE}/production/{kind}/iOS/{VERSION}/catalog_{VERSION}.json.br', rel, checksum)
-            catalog = json.loads(brotli.decompress((output / rel).read_bytes()))
-            dest = output / f'assets/{kind}/ios/catalog.json'
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            dest.write_text(json.dumps(catalog))
-            jobs.extend((f'assets/{kind}/ios/{p}', f'{BASE}/production/{kind}/iOS/{VERSION}/{p}')
-                        for p in bundle_paths(catalog, kind))
+        for target in platforms(platform):
+            for kind, checksum in catalog_hashes(target).items():
+                rel = catalog_path(kind, target)
+                required(f'{BASE}/production/{kind}/{target}/{VERSION}/catalog_{VERSION}.json.br', rel, checksum)
+                catalog = json.loads(brotli.decompress((output / rel).read_bytes()))
+                dest = output / f'assets/{kind}/{target.lower()}/catalog.json'
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                dest.write_text(json.dumps(catalog))
+                jobs.extend((f'assets/{kind}/{target.lower()}/{p}', f'{BASE}/production/{kind}/{target}/{VERSION}/{p}')
+                            for p in bundle_paths(catalog, kind, target))
         jobs.extend(metadata_jobs((output / 'master-original.db').read_bytes()))
         stories = story_supplement()
         for entry in stories.values():
@@ -205,7 +226,7 @@ def run(output, workers=4, limit=0, metadata_only=False, supplemental_only=False
         jobs.append((path, BASE + entry['url_path']))
         expected[path] = entry['sha256']
     jobs = list(dict(jobs).items())
-    print(f'Enumerated {len(jobs)} media files for iOS {VERSION}.', flush=True)
+    print(f'Enumerated {len(jobs)} media files for {platform} {VERSION}.', flush=True)
     (output / 'download-plan.json').write_text(json.dumps(jobs))
     if metadata_only:
         print('Metadata only: media has NOT been downloaded.'); return 0
@@ -230,13 +251,14 @@ def run(output, workers=4, limit=0, metadata_only=False, supplemental_only=False
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--output', default='data')
+    p.add_argument('--platform', choices=('ios','android','both'), default='ios')
     p.add_argument('--workers', type=int, choices=range(1, 9), default=4)
     p.add_argument('--limit', type=int, default=0, help='Download only N media files (test only)')
     p.add_argument('--supplemental-only', action='store_true', help='Fetch only pinned static resources and help metadata; no bundles or account changes')
     p.add_argument('--metadata-only', action='store_true', help='Fetch master/catalogs and enumerate media')
     args = p.parse_args()
     if args.limit < 0: p.error('--limit must be nonnegative')
-    raise SystemExit(run(args.output, args.workers, args.limit, args.metadata_only, args.supplemental_only))
+    raise SystemExit(run(args.output, args.workers, args.limit, args.metadata_only, args.supplemental_only, args.platform))
 
 if __name__ == '__main__':
     main()

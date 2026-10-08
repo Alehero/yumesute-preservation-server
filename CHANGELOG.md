@@ -11,6 +11,26 @@ pinned to `3cfca23267fb0f79d7336732db768e1510f20313`.
 [TeamOpenSirius/OpenSiriusServer](https://github.com/TeamOpenSirius/OpenSiriusServer)
 was an independent protocol reference, not a second backend merged into this release.
 
+## October 8, 2026 — Android asset setup and repair
+
+- Download, setup and repair now accept `--platform android` or `--platform both`;
+  iOS remains the default. Android 1.96.0 catalogs have separately pinned checksums,
+  and catalogs/bundles are installed under separate platform folders. Shared master,
+  charts and story resources remain reusable. Doctor reports both platform catalogs.
+- Existing installations can use `repair-data --platform android` without resetting
+  accounts, replacing iOS files or reinstalling Docker. Repair checks selected catalogs
+  before installing media. English/Japanese guides explain updating and repairing.
+- **Implemented/server-tested:** 57 unit tests passed. Live metadata download verified
+  all three Android catalogs and enumerated 37,487 media files. A temporary repair
+  installation served all three catalog/hash routes and one verified Android bundle
+  successfully. No live account or local gameplay runtime was changed.
+- **Limitations:** full media acquisition and Android device play are unverified.
+  Sampled official 3D/audio bundles returned 404; `--allow-missing` only installs verified
+  available files and does not resolve missing assets. These failures are distinct from
+  the known 30 chart/configuration URLs. No new account captures in this batch.
+- Gameplay inventory remains **31 groups**, based on the pinned
+  **UnknownSekai/server-of-dreams** backend.
+
 ## October 8, 2026 — Persistent music bookmarks and safe room listing
 
 - Merged PR #5 from **tomyuan520**: music bookmark changes now persist across logins

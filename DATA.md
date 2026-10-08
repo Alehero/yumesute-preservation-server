@@ -300,3 +300,22 @@ users who want it off should uncheck the option after upgrading.
 
 以前の版から更新すると保存が有効になります。以前の版では未設定と無効を区別していなかったため、
 保存を希望しない場合は更新後にチェックを外してください。以後、その設定は再起動後も保持されます。
+
+## Android media / Android素材
+
+`download_data.py`, `server.py setup` and `server.py repair-data` accept
+`--platform ios|android|both` (default `ios`). The pinned master and charts are shared;
+Android catalog checksums are pinned separately. iOS compressed catalogs retain
+`catalogs/<kind>.json.br`; Android uses `catalogs/android/<kind>.json.br`. Decoded
+catalogs and bundles use `assets/<kind>/ios/` or `assets/<kind>/android/`.
+Use the same data folder to reuse shared downloads. The latest download plan/report
+describes only the selected platform(s); previously downloaded files remain.
+
+Downloader metadata-only mode enumerates assets but does not download bundles or
+repair the installation. Repair validates selected catalogs before installing media,
+retains the other platform, and never writes account data or database configuration.
+A missing Android catalog cannot be replaced by the iOS catalog.
+
+ダウンロード・setup・repair-data は `--platform android` / `both` に対応します。
+マスターと譜面は共通、カタログとバンドルはOS別に保管します。既存素材・アカウントは保持します。
+最新の取得計画・結果には指定したOSのみが記載されます。metadata-only は素材取得・修復を行いません。

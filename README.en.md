@@ -112,6 +112,43 @@ Keep the computer awake and terminal open while playing. To stop, turn WireGuard
 and press **Control+C**; optionally stop the database with `docker compose stop`.
 On Mac, if double-clicking the launcher is blocked, use the terminal command above.
 
+## Android setup and missing-catalog repair
+
+Setup defaults to iOS. For a new Android installation, use:
+
+```sh
+uv run --locked python server.py setup --platform android
+```
+
+Use `--platform both` to download iOS and Android assets together (requires more disk
+space). Catalogs and bundles are platform-specific; do not rename iOS files to Android.
+
+If an existing Android installation reaches login but gets catalog 404s, stop the game
+server with Control+C, keep PostgreSQL/Docker's database running, and run in the same folder:
+
+```sh
+git pull --ff-only
+uv run --locked python server.py repair-data --platform android
+uv run --locked python server.py start
+```
+
+For ZIP installations, update the program files while retaining `private/`, `.env`,
+`vendor/server-of-dreams/config.yml`, downloaded assets and the database volume.
+Do not reset the account, rerun fresh-account creation or reinstall Docker.
+
+If repair reports failed downloads, inspect `data/download-report.jsonl`. To explicitly
+install the verified files despite missing bundles, rerun:
+
+```sh
+uv run --locked python server.py repair-data --platform android --allow-missing
+```
+
+All three Android 1.96.0 catalogs were downloadable on October 8, 2026, but sampled
+3D/audio bundles returned 404. This option cannot recover missing official files or
+guarantee a complete game. Those failures are separate from the known 30 chart URLs.
+Restart after repair. Existing iOS files and accounts are retained. Setup skips media
+changes when an account already exists: use **repair-data** to add another platform.
+
 ## Manual recovery if automatic login did not restore your account
 
 **Only if automatic recovery did not restore your account**, choose **title Menu → データ連携 → 連携パスワード入力** and enter your **official linking ID and password**. Check the displayed account name. To select this installation's original starter or manually imported save instead, use the **local** credentials in `private/linking-credentials.txt`. Apple sign-in recovery is not implemented. Linking changes the account selected on the receiving device.

@@ -108,6 +108,43 @@ uv run --locked python server.py start
 終了時はWireGuardをオフにして **Control+C**。DBも止める場合は `docker compose stop` を実行します。
 Macでダブルクリック起動が拒否される場合は、上記のターミナルコマンドを使ってください。
 
+## Androidの導入・カタログ404の修復
+
+初期設定はiOSです。Androidで新規導入する場合は次を実行してください。
+
+```sh
+uv run --locked python server.py setup --platform android
+```
+
+両方の端末を使う場合は `--platform both` を指定できます（必要容量が増えます）。
+カタログとバンドルはOS別です。iOS用フォルダーをAndroidに改名しないでください。
+
+既にログインできていてAndroidカタログだけが404になる場合は、Control+Cでゲームサーバーを
+止め、DBは起動したまま、同じフォルダーで次を実行します。
+
+```sh
+git pull --ff-only
+uv run --locked python server.py repair-data --platform android
+uv run --locked python server.py start
+```
+
+ZIPで導入した場合はプログラムを更新し、`private/`、`.env`、
+`vendor/server-of-dreams/config.yml`、取得済み素材、DBボリュームは保持してください。
+アカウント初期化やDockerの再インストールは不要です。
+
+取得に失敗した場合は `data/download-report.jsonl` を確認してください。
+不足を承知のうえで取得・検証済みファイルをインストールする場合のみ、次を実行します。
+
+```sh
+uv run --locked python server.py repair-data --platform android --allow-missing
+```
+
+2026年10月8日の確認ではAndroid 1.96.0のカタログ3種類は取得できましたが、
+一部の3D・音声バンドルは404でした。既知の譜面30件の404とは別の問題です。
+`--allow-missing` は失われたファイルを復元する機能ではなく、完全動作は保証しません。
+修復後はサーバーを再起動してください。既存のiOS素材とアカウントは保持されます。
+アカウント作成済み環境の `setup` は素材追加を省略するため、OS追加には `repair-data` を使います。
+
 ## 自動復元できなかった場合の手動復元
 
 **自動復元で元のアカウントが表示されなかった場合のみ**、タイトルの **メニュー → データ連携 → 連携パスワード入力** から、**公式の連携ID・連携パスワード**を入力し、表示名を確認してください。この環境の元の初期セーブやZIPから取り込んだセーブを選ぶ場合は、`private/linking-credentials.txt` の**ローカル連携情報**を使います。Appleでのサインインによる復元には未対応です。連携操作は、接続先端末で選択しているアカウントを変更します。

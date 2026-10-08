@@ -110,9 +110,9 @@ def require_stopped(root):
     raise RuntimeError(f'Port {port} is active. Stop the game server before setup, repair or backup (keep PostgreSQL running).')
 
 
-def download(source, allow_missing):
+def download(source, allow_missing, platform="ios"):
     import download_data
-    result = download_data.run(source)
+    result = download_data.run(source, platform=platform)
     if result and not allow_missing:
         raise RuntimeError('Some downloads failed. Inspect data-dir/download-report.jsonl and retry the same command. Use --allow-missing only to accept incomplete media explicitly.')
     return result
@@ -138,7 +138,7 @@ def setup(root, args, server):
             if not (source/'master-original.db').exists() and shutil.disk_usage(source).free < 45*1024**3:
                 raise RuntimeError('Allow approximately 45 GB free for the first download and installed copy. Free space and retry.')
             print('Checking/downloading game files; verified completed files are reused.', flush=True)
-            download(source, args.allow_missing)
+            download(source, args.allow_missing, getattr(args, "platform", "ios"))
         elif not all((source / n).is_file() for n in ('master-original.db', 'master-manifest.json')):
             raise RuntimeError('--skip-download requires an existing game-data folder with its master and manifest.')
         print('Preparing data. Interrupted preparation can be retried before account creation.', flush=True)
@@ -175,7 +175,7 @@ def atomic_copy(source, dest, expected):
     return True
 
 
-def install_verified_media(root, source):
+def install_verified_media(root, source, platform="ios"):
     """Only downloader-verified media; account/config/master tables are never replaced."""
     import download_data as d
     from supplemental_resources import resources
@@ -201,12 +201,14 @@ def install_verified_media(root, source):
     # Reconstruct and verify catalogs rather than trusting unverified decoded copies.
     import brotli
     catalogs = []
-    for kind, expected in d.CATALOG_HASHES.items():
-        src = source / f'catalogs/{kind}.json.br'
-        if d.digest(src) != expected:
-            raise ValueError('Invalid catalog: ' + kind)
-        catalogs.append((root / f'vendor/server-of-dreams/_data/assets/{kind}/ios/catalog.json',
-                         json.loads(brotli.decompress(src.read_bytes()))))
+    for target in d.platforms(platform):
+        for kind, expected in d.catalog_hashes(target).items():
+            src = source / d.catalog_path(kind, target)
+            if d.digest(src) != expected:
+                raise ValueError('Invalid catalog: ' + target + '/' + kind)
+            catalog = json.loads(brotli.decompress(src.read_bytes()))
+            d.bundle_paths(catalog, kind, target)  # Reject mismatched-platform catalogs.
+            catalogs.append((root / f'vendor/server-of-dreams/_data/assets/{kind}/{target.lower()}/catalog.json', catalog))
     count = sum(atomic_copy(*item) for item in selected)
     for dest, content in catalogs:
         atomic_json(dest, content)
@@ -232,9 +234,9 @@ def repair(root, args):
     import download_data as d
     if d.digest(root / 'private/upstream/master-original.db') != d.MASTER_HASH:
         raise RuntimeError('Installed master differs from the reference. Refusing automatic repair across data versions.')
-    download(source, args.allow_missing)
+    download(source, args.allow_missing, getattr(args, "platform", "ios"))
     result = any(json.loads(line)['status'] not in ('downloaded','verified-existing') for line in (source/'download-report.jsonl').read_text().splitlines())
-    count = install_verified_media(root, source)
+    count = install_verified_media(root, source, getattr(args, "platform", "ios"))
     print(f'Repaired {count} media files; accounts/configuration unchanged. Restart with server.py start.', flush=True)
     if result:
         print('INCOMPLETE: accepted missing downloads remain listed in download-report.jsonl.', flush=True)
