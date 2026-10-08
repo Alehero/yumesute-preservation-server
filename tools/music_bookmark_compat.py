@@ -4,6 +4,7 @@ from fastapi import APIRouter, Request
 
 from db.user import upsert_music_bookmark
 from helpers.msgpack import read_request, respond
+from helpers.cache import cache
 from helpers.user_data import current_user_id, data_object
 from models import BooleanResult, EditBookmarkPayload
 from models.database import MusicBookmarkModel
@@ -21,6 +22,11 @@ async def edit_music_bookmark(request: Request):
 
     music_id = payload.music_master_id
     bookmark_flag = int(payload.bookmark_flag)
+    # The enum permits unknown integers; only the three bookmark bits are valid.
+    if bookmark_flag < 0 or bookmark_flag & ~7 or not any(
+        music.id_ == music_id for music in cache.music_master
+    ):
+        return respond(BooleanResult())
     app = request.app
     async with app.acquire_db() as conn:
         async with conn.conn.transaction():
