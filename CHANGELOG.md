@@ -11,6 +11,23 @@ pinned to `3cfca23267fb0f79d7336732db768e1510f20313`.
 [TeamOpenSirius/OpenSiriusServer](https://github.com/TeamOpenSirius/OpenSiriusServer)
 was an independent protocol reference, not a second backend merged into this release.
 
+## October 8, 2026 — Persistent music bookmarks and safe room listing
+
+- Merged PR #5 from **tomyuan520**: music bookmark changes now persist across logins
+  rather than returning success without saving. Supports all three bookmark groups
+  and combinations, removal, duplicate-row cleanup and serialized concurrent edits.
+  Added validation for unknown songs and unsupported bookmark flags during review.
+- The multiplayer room-list endpoint now returns an empty collection instead of a
+  placeholder room, addressing the request used by the level-10 unlock walkthrough.
+  This does not implement room creation, matching or multiplayer gameplay.
+- **Implemented/server-tested:** 53 unit tests passed, plus disposable PostgreSQL/HTTP
+  checks for route precedence, response format, bookmark add/change/remove, input
+  validation, concurrent edits, account/song isolation and reload/import-overlay
+  persistence. No official captures or device confirmation in this review batch;
+  the level-10 walkthrough still needs an in-game retest. Local runtime not updated.
+- Music bookmarks add one user-facing group: the inventory is now **31 groups**,
+  built on the pinned **UnknownSekai/server-of-dreams** backend.
+
 ## October 5, 2026 — Preserve official tokens by default
 
 - Encrypted official-token preservation is now enabled by default, including first-login
@@ -424,7 +441,7 @@ The base gacha implementation remains upstream work.
 
 ## Feature inventory
 
-**30 player-facing feature groups** have been added or substantially repaired around
+**31 player-facing feature groups** have been added or substantially repaired around
 our pinned upstream backend. This counts systems, not individual routes or bug fixes;
 it does not mean every group was wholly absent upstream or is fully verified.
 
@@ -445,6 +462,7 @@ it does not mean every group was wholly absent upstream or is fully verified.
 | 13 | Anthology progression/rewards | 28 | Multi-song courses and entry/rewards |
 | 14 | Auditions (scoring incomplete) | 29 | Theater/MV viewing records |
 | 15 | Photo development/storage (rarity provisional) | 30 | Persistent reroll sessions (approximate odds) |
+| 31 | Persistent music bookmarks | | |
 
 Account export/import and automatic recovery, client compatibility, asset preservation, downloader tooling
 and documentation support these features and are not additional gameplay groups.

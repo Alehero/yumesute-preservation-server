@@ -69,3 +69,8 @@ the normal unit suite.
 disposable clone of a recovered installation. It uses synthetic credentials and
 offline official-service stubs; never point it at a live database. It checks export
 round trips, credential preservation, local-first outages and unchanged progress.
+
+`check_music_bookmarks.py --database yumesute_pr5_checks_<suffix>` requires a
+disposable clone with two accounts and prepared master data. It changes bookmarks
+only in that clone and checks room-list responses, input validation, concurrency,
+account isolation and persistence through reload/import compatibility overlays.
