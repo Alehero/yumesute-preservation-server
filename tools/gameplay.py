@@ -969,6 +969,8 @@ def install(app):
 
     import live_modes
     live_modes.install(app)
+    import dual_card_compat
+    dual_card_compat.install(app)
     import photo_preservation
     photo_preservation.install(app)
     import customization
