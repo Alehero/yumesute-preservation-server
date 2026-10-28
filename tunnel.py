@@ -24,7 +24,13 @@ class LocalServer:
     def __init__(self, port): self.port = port
     def tls_failed_client(self, data):
         host = data.conn.sni or data.context.server.sni
-        if host in ("lb-api.wds-stellarium.com", "assets-e.wds-stellarium.com", "lb-realtime.wds-stellarium.com"):
+        # The game's realtime client uses its own TLS stack (BestHTTP/YahaTLS),
+        # which only trusts its bundled roots, so it always rejects the local CA.
+        # Realtime multiplayer is unsupported locally; keep this expected failure
+        # quiet instead of flooding the terminal.
+        if host == "lb-realtime.wds-stellarium.com":
+            return
+        if host in ("lb-api.wds-stellarium.com", "assets-e.wds-stellarium.com"):
             print(f"Game TLS connection failed for {host}: {data.conn.error}. "
                   "Check the certificate name/fingerprint in setup.html and enable full trust. "
                   "If another installation already works, restart with --ca-dir pointing to its local CA store.",

@@ -12,7 +12,7 @@ import struct
 from fastapi import APIRouter, Request
 from helpers.cache import cache
 from helpers.user_data import current_user_id, _table, _to_array
-from helpers.msgpack import respond
+from helpers.msgpack import respond, fault
 from helpers.character_enhance import (
     character_master,
     sense_enhance_cost,
@@ -20,7 +20,7 @@ from helpers.character_enhance import (
     max_talent_stage,
     bloom_rewards,
 )
-from helpers.character_level import experience_item
+from helpers.character_level import experience_item, experience_items
 from helpers.things import grant_things_consolidated
 from helpers.episodes import (
     episode_read_reward_things,
@@ -28,7 +28,7 @@ from helpers.episodes import (
     episode_result,
     _local_meta,
 )
-from models import BooleanResult, StarPointResult, UseExperienceItemsPayload
+from models import BulkLevelUpPayload, BooleanResult, StarPointResult, UseExperienceItemsPayload
 from models.unions import IDATA_OBJECT_KEY
 from db import user as queries
 
@@ -36,6 +36,10 @@ router = APIRouter()
 
 
 class Rejected(Exception):
+    pass
+
+
+class NotEnough(Rejected):
     pass
 
 
@@ -120,7 +124,7 @@ class State:
         if any(items.get(i, {}).get("stock", 0) < n for i, n in costs.items()) or (
             coin and (not currency or currency["coin"] < coin)
         ):
-            raise Rejected("Insufficient resources")
+            raise NotEnough("Insufficient resources")
         for i, n in costs.items():
             if n:
                 await self.update("Item", items[i], stock=items[i]["stock"] - n)
@@ -909,6 +913,49 @@ def actor_experience(level, current, gained, cap, rarity):
     return level, experience
 
 
+def experience_to_reach_for(level, current, cap, rarity):
+    # Same rarity-scaled curve actor_experience uses; the upstream helper only
+    # knows the rarity-4 table and would overspend on rarity 1/2/3 actors.
+    factor = {1: 0.3, 2: 0.5, 3: 0.8, 4: 1.0}[int(rarity)]
+    levels = {x.level: x.experience_to_level_up for x in cache.character_level_master}
+    total = 0
+    for lv in range(max(1, level), cap):
+        need = levels.get(lv)
+        if need is None:
+            break
+        total += math.floor(need * factor)
+    return max(0, total - current)
+
+
+def spend_experience_pool(stock, needed, bonus):
+    # Bulk level-up must value items the same way AddExperience does: the
+    # account's experience bonus applies to every script, rounded per item.
+    # The upstream pool helper prices items at raw EXP and therefore burns
+    # hundreds of scripts for a single level on a high-bonus account.
+    if needed <= 0:
+        return {}
+    items = experience_items()
+    left = dict(stock)
+    spend = {}
+    for master in items:
+        value = math.floor(master.acquirable_experience * (1 + bonus / 100))
+        owned = left.get(master.item_master_id, 0)
+        if value <= 0 or owned <= 0 or needed < value:
+            continue
+        quantity = min(owned, needed // value)
+        if quantity > 0:
+            spend[master.item_master_id] = quantity
+            left[master.item_master_id] = owned - quantity
+            needed -= quantity * value
+    if needed > 0:
+        for master in reversed(items):
+            if left.get(master.item_master_id, 0) > 0:
+                ident = master.item_master_id
+                spend[ident] = spend.get(ident, 0) + 1
+                break
+    return spend
+
+
 @router.post("/api/Characters/{characterId}/AddExperience")
 async def actor_level(request: Request, characterId: int):
     from helpers.msgpack import read_request_list
@@ -953,8 +1000,86 @@ async def actor_level(request: Request, characterId: int):
             )
             await level_missions(s, cm, delta, level)
         return respond(BooleanResult(is_success=True), present=s.present())
+    except NotEnough:
+        return respond(BooleanResult(), faults=[fault("NotEnoughThing")])
     except Rejected:
-        return respond(BooleanResult())
+        return respond(BooleanResult(), faults=[fault("InvalidRequest")])
+
+
+@router.post("/api/Characters/BulkLevelUp")
+async def bulk_level(request: Request):
+    from helpers.msgpack import read_request_list
+    from helpers.character_level import released_max_level
+
+    try:
+        payloads = await read_request_list(request, BulkLevelUpPayload)
+        if not payloads:
+            raise Rejected()
+        async with transaction(request) as s:
+            user = await s.one("User")
+            bonus = await s.one("UserBonus")
+            if not user or not bonus:
+                raise Rejected()
+            cap = min(user["playerRank"], released_max_level())
+            characters = {r["id"]: r for r in await s.rows("Character")}
+            stock = {
+                r["itemMasterId"]: r["stock"]
+                for r in await s.rows("Item")
+                if experience_item(r["itemMasterId"])
+            }
+            spent = {}
+            needed_any = False
+            for entry in sorted(payloads, key=lambda p: p.order):
+                row = characters.get(entry.character_id)
+                if row is None or row["level"] >= cap:
+                    continue
+                cm = character_master(row["characterMasterId"])
+                if cm is None:
+                    continue
+                need = experience_to_reach_for(
+                    row["level"], row["currentExperience"], cap, cm.rarity
+                )
+                if need <= 0:
+                    continue
+                needed_any = True
+                spend = spend_experience_pool(stock, need, bonus["experienceBonus"])
+                if not spend:
+                    continue
+                gained = actor_item_experience(spend, bonus["experienceBonus"])
+                if gained <= 0:
+                    continue
+                for ident, quantity in spend.items():
+                    stock[ident] -= quantity
+                    spent[ident] = spent.get(ident, 0) + quantity
+                level, exp = actor_experience(
+                    row["level"], row["currentExperience"], gained, cap, cm.rarity
+                )
+                delta = level - row["level"]
+                await s.update("Character", row, level=level, currentExperience=exp)
+                await level_missions(s, cm, delta, level)
+            if not spent:
+                return respond(
+                    BooleanResult(),
+                    faults=[
+                        fault("NotEnoughThing" if needed_any else "InvalidRequest")
+                    ],
+                )
+            await s.pay(spent)
+            bonus_gain = sum(
+                experience_item(ident).acquirable_experience_bonus * quantity
+                for ident, quantity in spent.items()
+            )
+            if bonus_gain:
+                await s.update(
+                    "UserBonus",
+                    bonus,
+                    experienceBonus=f32(bonus["experienceBonus"] + bonus_gain),
+                )
+        return respond(BooleanResult(is_success=True), present=s.present())
+    except NotEnough:
+        return respond(BooleanResult(), faults=[fault("NotEnoughThing")])
+    except Rejected:
+        return respond(BooleanResult(), faults=[fault("InvalidRequest")])
 
 
 def install(app):
